@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PACKAGE NAME HERE"
+authors = [
+    {name = "QuakeCoRE" },
+]
+description = "PACKAGE DESCRIPTION HERE"
+readme = "README.md"
+requires-python = ">=3.9"
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
