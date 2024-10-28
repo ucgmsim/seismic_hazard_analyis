@@ -1,7 +1,7 @@
 """Module for disaggregation of seismic hazard"""
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.stats as stats
 
 from .hazard import hazard_single

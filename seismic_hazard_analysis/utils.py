@@ -1,14 +1,16 @@
 from typing import List, Sequence
 
-import scipy as sp
 import numpy as np
+import scipy as sp
 
 
 def query_non_parametric_cdf_invs(
     y: np.ndarray, cdf_x: np.ndarray, cdf_y: np.ndarray
 ) -> np.ndarray:
-    """Retrieve the x-values for the specified y-values given the
+    """
+    Retrieve the x-values for the specified y-values given the
     non-parametric cdf function
+
     Note: Since this is for a discrete CDF,
     the inversion function returns the x value
     corresponding to F(x) >= y
@@ -40,6 +42,7 @@ def query_non_parametric_multi_cdf_invs(
     """
     Retrieve the x-values for the specified y-values given a
     multidimensional array of non-parametric cdf along each row
+
     Note: Since this is for a discrete CDF,
     the inversion function returns the x value
     corresponding to F(x) >= y

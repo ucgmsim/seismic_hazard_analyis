@@ -8,14 +8,13 @@ Soil Dynamics and Earthquake Engineering 40 (2012): 48-61.
 Earthquake Engineering & Structural Dynamics 44.13 (2015): 2321-2340.
 """
 
-from typing import Iterable, Tuple, Sequence
+from typing import Iterable, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.linalg import cholesky
 
 from . import shared
-
 
 GM_SCALING_ALPHA = {
     "pga": 1,

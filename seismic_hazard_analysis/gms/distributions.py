@@ -4,8 +4,8 @@ Representation for the different distributions used for GMS
 
 from typing import Dict, Sequence
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class CondIMjDist:

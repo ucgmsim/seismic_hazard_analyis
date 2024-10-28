@@ -1,10 +1,10 @@
-from typing import Dict
 from pathlib import Path
+from typing import Dict
 
-import scipy as sp
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import scipy as sp
 
 from . import distributions as dist
 

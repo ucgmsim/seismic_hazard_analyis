@@ -2,16 +2,14 @@
 Contains functions for computation of the empirically GMM (i.e. parametric) based GCIM
 """
 
-from typing import Dict, Sequence, Union, Tuple
+from typing import Dict, Sequence, Tuple, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy as sp
 
-from .. import im_correlations
+from .. import disagg, hazard, im_correlations
 from . import distributions as dist
-from .. import disagg
-from .. import hazard
 
 
 def compute_rupture_weights(
