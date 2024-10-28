@@ -1,4 +1,5 @@
-"""Ground motion selection functionality for simulations based on the following papers:
+"""
+Ground motion selection functionality for simulations based on the following papers:
 - Bradley, Brendon A. "A generalized conditional intensity measure approach and holistic ground‐motion selection."
 Earthquake Engineering & Structural Dynamics 39.12 (2010): 1321-1342.
 - Bradley, Brendon A. "A ground motion selection algorithm based on the generalized conditional intensity measure approach."
@@ -6,6 +7,7 @@ Soil Dynamics and Earthquake Engineering 40 (2012): 48-61.
 - Bradley, Brendon A., Lynne S. Burks, and Jack W. Baker. "Ground motion selection for simulation‐based seismic hazard and structural reliability assessment."
 Earthquake Engineering & Structural Dynamics 44.13 (2015): 2321-2340.
 """
+
 from typing import Iterable, Tuple, Sequence
 
 import numpy as np
@@ -133,6 +135,7 @@ def get_scale_alpha(IMs: Iterable[str]):
 
     return pd.Series(data=alphas, index=IMs)
 
+
 def compute_scaling_factor(gm_im_values: pd.Series, im_name: str, im_value: float):
     """
     Computes the amplitude scaling factor such that IM_j == im_j
@@ -158,6 +161,7 @@ def compute_scaling_factor(gm_im_values: pd.Series, im_name: str, im_value: floa
     sf = np.power(im_value / gm_im_values, 1.0 / IMj_alpha)
 
     return sf
+
 
 def apply_amp_scaling(im_df: pd.DataFrame, sf: pd.Series):
     """
@@ -186,7 +190,9 @@ def apply_amp_scaling(im_df: pd.DataFrame, sf: pd.Series):
     IMs_alpha = get_scale_alpha(im_names)
 
     im_sf_df = pd.DataFrame(
-        index=sf.index, data=np.power(sf.values[:, np.newaxis], IMs_alpha.values[np.newaxis, :]), columns=im_names
+        index=sf.index,
+        data=np.power(sf.values[:, np.newaxis], IMs_alpha.values[np.newaxis, :]),
+        columns=im_names,
     )
 
     scaled_im_df = im_df * im_sf_df

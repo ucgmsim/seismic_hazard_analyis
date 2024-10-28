@@ -1,4 +1,6 @@
-"""Contains the classes that represent the different distributions used for GMS"""
+"""
+Representation for the different distributions used for GMS
+"""
 
 from typing import Dict, Sequence
 
@@ -7,8 +9,8 @@ import numpy as np
 
 
 class CondIMjDist:
-    """Represents any distribution
-    that is conditional on IMj
+    """
+    Represents any distribution that is conditional on IMj
 
     Parameters
     ----------
@@ -27,8 +29,8 @@ class CondIMjDist:
 
 
 class UniIMiDist:
-    """Represents any univariate
-    IMi distribution
+    """
+    Represents any uni-variate IMi distribution
 
     Parameters
     ----------
@@ -44,9 +46,9 @@ class UniIMiDist:
 
 
 class Uni_lnIMi_IMj_Rup(UniIMiDist, CondIMjDist):
-    """Represents the (parametric) univariate
-    lognormal IMi|IMj,Rup distribution
-    for each rupture
+    """
+    Represents the (parametric) uni-variate
+    log-normal IMi|IMj,Rup distribution for each rupture
 
     Parameters
     ----------
@@ -80,8 +82,7 @@ class Uni_lnIMi_IMj_Rup(UniIMiDist, CondIMjDist):
 
 class Multi_lnIM_IMj_Rup(CondIMjDist):
     """Represents the (parametric) multivariate
-    lognormal IM|IMj,Rup (where IM is the vector
-    of IMi)
+    log-normal IM|IMj,Rup (where IM is the vector of IMi)
 
     Parameters
     ----------
@@ -135,7 +136,7 @@ class Uni_lnIMi_IMj(UniIMiDist, CondIMjDist):
         are only included for the case when multiple Uni_lnIMi_IMj distributions
         are combined (e.g. for a logic tree case), in which case these values are
         used to compute the lnIMi values of the resulting non-parametric CDF.
-        Otherwise these parameters/attributes should just be ignored.
+        Otherwise, these parameters/attributes should just be ignored.
     """
 
     def __init__(

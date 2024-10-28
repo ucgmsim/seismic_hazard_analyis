@@ -1,15 +1,17 @@
-"""Contains functions for computation of the empirically GMM (i.e. parametric) based GCIM"""
+"""
+Contains functions for computation of the empirically GMM (i.e. parametric) based GCIM
+"""
 
 from typing import Dict, Sequence, Union, Tuple
 
 import pandas as pd
 import numpy as np
-from scipy import stats
+import scipy as sp
 
-from sha_calc import disagg
-from sha_calc import ground_motion as gm
+from .. import im_correlations
 from . import distributions as dist
-from . import im_correlations
+from .. import disagg
+from .. import hazard
 
 
 def compute_rupture_weights(
@@ -17,7 +19,8 @@ def compute_rupture_weights(
     branch_data: Dict[str, Tuple[pd.DataFrame, pd.Series]],
     im_j_delta: float = 0.001,
 ) -> pd.Series:
-    """Computes the ruptures weights for IMj=imj
+    """
+    Computes the ruptures weights for IMj=imj
     as per equation (7) in Bradley (2010), "A generalized conditional
     intensity measure approach and holistic ground-motion selection"
 
@@ -43,8 +46,8 @@ def compute_rupture_weights(
     for branch_name, (cur_IMj_df, cur_annual_rec_prob) in branch_data.items():
         # Compute the rupture weights via disagg (equal)
         cur_P_Rup_IMj = disagg.disagg_equal(
-            gm.parametric_gm_excd_prob(im_j, cur_IMj_df).squeeze(),
-            gm.parametric_gm_excd_prob(im_j + im_j_delta, cur_IMj_df).squeeze(),
+            hazard.parametric_gm_excd_prob(im_j, cur_IMj_df).squeeze(),
+            hazard.parametric_gm_excd_prob(im_j + im_j_delta, cur_IMj_df).squeeze(),
             cur_annual_rec_prob,
         )
         cur_P_Rup_IMj = cur_P_Rup_IMj.to_frame(branch_name)
@@ -105,7 +108,7 @@ def comb_lnIMi_IMj(lnIMi_IMj: Dict[str, dist.Uni_lnIMi_IMj], weights: pd.Series)
     sigma_IMi_IMj = np.sqrt(
         (
             (
-                (branch_sigma_lnIMi_IMj_df ** 2)
+                (branch_sigma_lnIMi_IMj_df**2)
                 + ((branch_mu_lnIMi_IMj - mu_lnIMi_IMj) ** 2)
             ).multiply(weights, axis=0)
         ).sum(axis=0)
@@ -113,7 +116,10 @@ def comb_lnIMi_IMj(lnIMi_IMj: Dict[str, dist.Uni_lnIMi_IMj], weights: pd.Series)
 
     # Compute the IM values for +/- sigma
     z = np.linspace(-4, 4, 2000)
-    cdf_x = pd.Series(data=mu_lnIMi_IMj + sigma_IMi_IMj * z, name="cdf_x",)
+    cdf_x = pd.Series(
+        data=mu_lnIMi_IMj + sigma_IMi_IMj * z,
+        name="cdf_x",
+    )
     cdf_y = pd.Series(data=np.zeros(cdf_x.shape[0]), name="cdf_y")
     for cur_name, cur_lnIMi_IMj in lnIMi_IMj.items():
         # Otherwise the combined CDF will not add to 1.0
@@ -131,8 +137,7 @@ def comb_lnIMi_IMj(lnIMi_IMj: Dict[str, dist.Uni_lnIMi_IMj], weights: pd.Series)
         )
 
     # Ensure combined CDF goes to 1.0
-    assert np.isclose(cdf_y.iloc[-1], 1.0, rtol=1e-4), \
-        "Combined CDF does not go to 1.0"
+    assert np.isclose(cdf_y.iloc[-1], 1.0, rtol=1e-4), "Combined CDF does not go to 1.0"
 
     return dist.Uni_lnIMi_IMj(
         pd.Series(index=cdf_x.values, data=cdf_y.values),
@@ -182,7 +187,7 @@ def compute_lnIMi_IMj(
     sigma_IMi_IMj = np.sqrt(
         (
             (
-                (sigma_lnIMi_IMj_Rup ** 2) + ((mu_lnIMi_IMj_Rup - mu_IMi_IMj) ** 2)
+                (sigma_lnIMi_IMj_Rup**2) + ((mu_lnIMi_IMj_Rup - mu_IMi_IMj) ** 2)
             ).multiply(P_Rup_IMj, axis=0)
         ).sum(axis=0)
     )
@@ -207,7 +212,8 @@ def compute_lnIMi_IMj(
         # Compute the CDF, assumes that
         # IMi|IMj, Rup distributions are lognormal
         cdf_y[ix, :] = np.sum(
-            stats.norm.cdf(cur_z_IMi_Rup_IMj) * P_Rup_IMj.values[:, np.newaxis], axis=0
+            sp.stats.norm.cdf(cur_z_IMi_Rup_IMj) * P_Rup_IMj.values[:, np.newaxis],
+            axis=0,
         )
 
     cdf_x = pd.DataFrame(data=cdf_x, columns=IMs)
@@ -389,7 +395,7 @@ def compute_rho(IMs: Sequence[str], IMj: str) -> pd.DataFrame:
             rho_k_j = im_correlations.get_im_correlations(IM_k, IMj)
             rho_i_k = im_correlations.get_im_correlations(IM_i, IM_k)
             rho[i, j] = rho[j, i] = (rho_i_k - (rho_i_j * rho_k_j)) / (
-                np.sqrt(1 - rho_i_j ** 2) * np.sqrt(1 - rho_k_j ** 2)
+                np.sqrt(1 - rho_i_j**2) * np.sqrt(1 - rho_k_j**2)
             )
 
     assert np.all(~np.isnan(rho))
@@ -423,7 +429,7 @@ def compute_correlation_matrix(IMs: np.ndarray, IM_j: str) -> pd.DataFrame:
             rho_k_j = im_correlations.get_im_correlations(IM_k, IM_j)
             rho_i_k = im_correlations.get_im_correlations(IM_i, IM_k)
             rho[i, j] = rho[j, i] = (rho_i_k - (rho_i_j * rho_k_j)) / (
-                np.sqrt(1 - rho_i_j ** 2) * np.sqrt(1 - rho_k_j ** 2)
+                np.sqrt(1 - rho_i_j**2) * np.sqrt(1 - rho_k_j**2)
             )
 
     assert np.all(~np.isnan(rho))

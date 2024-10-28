@@ -2,13 +2,8 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from sha_calc.hazard import hazard_single
-from sha_calc.disagg import (
-    disagg_exceedance,
-    disagg_mean_weights,
-    epsilon_non_para_single,
-    epsilon_para,
-)
+
+import seismic_hazard_analysis as sha
 
 
 def test_two_rupture_0p2():
@@ -18,7 +13,7 @@ def test_two_rupture_0p2():
     gm_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.378, 0.940])
     rec_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.01, 0.002])
 
-    contributions = disagg_exceedance(gm_prob, rec_prob)
+    contributions = sha.disagg.disagg_exceedance(gm_prob, rec_prob)
 
     assert round(contributions.loc["rupture_1"], 3) == 0.668
     assert round(contributions.loc["rupture_2"], 3) == 0.332
@@ -31,7 +26,7 @@ def test_two_rupture_0p5():
     gm_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.0191, 0.419])
     rec_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.01, 0.002])
 
-    contributions = disagg_exceedance(gm_prob, rec_prob)
+    contributions = sha.disagg.disagg_exceedance(gm_prob, rec_prob)
 
     assert round(contributions.loc["rupture_1"], 3) == 0.186
     assert round(contributions.loc["rupture_2"], 3) == 0.814
@@ -46,16 +41,16 @@ def test_mean_same_branches():
     gm_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.378, 0.940])
     rec_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.01, 0.002])
 
-    contributions_1 = disagg_exceedance(gm_prob, rec_prob)
-    contributions_2 = disagg_exceedance(gm_prob, rec_prob)
+    contributions_1 = sha.disagg.disagg_exceedance(gm_prob, rec_prob)
+    contributions_2 = sha.disagg.disagg_exceedance(gm_prob, rec_prob)
     disagg_models = pd.concat([contributions_1, contributions_2], axis=1)
 
-    hazard_1 = hazard_single(gm_prob, rec_prob)
-    hazard_2 = hazard_single(gm_prob, rec_prob)
+    hazard_1 = sha.hazard.hazard_single(gm_prob, rec_prob)
+    hazard_2 = sha.hazard.hazard_single(gm_prob, rec_prob)
     hazard_mean = np.average([hazard_1, hazard_2], weights=weights)
     hazard_models = pd.Series(data=[hazard_1, hazard_2], index=[0, 1])
 
-    adj_weights = disagg_mean_weights(
+    adj_weights = sha.disagg.disagg_mean_weights(
         hazard_mean, hazard_models, pd.Series(data=weights, index=[0, 1])
     )
     result = (disagg_models * adj_weights).sum(axis=1)
@@ -71,16 +66,16 @@ def test_mean_diff_branches():
 
     rec_prob = pd.Series(index=["rupture_1", "rupture_2"], data=[0.01, 0.002])
 
-    contributions_1 = round(disagg_exceedance(gm_prob_1, rec_prob), 3)
-    contributions_2 = round(disagg_exceedance(gm_prob_2, rec_prob), 5)
+    contributions_1 = round(sha.disagg.disagg_exceedance(gm_prob_1, rec_prob), 3)
+    contributions_2 = round(sha.disagg.disagg_exceedance(gm_prob_2, rec_prob), 5)
     disagg_models = pd.concat([contributions_1, contributions_2], axis=1)
 
-    hazard_1 = hazard_single(gm_prob_1, rec_prob)
-    hazard_2 = hazard_single(gm_prob_2, rec_prob)
+    hazard_1 = sha.hazard.hazard_single(gm_prob_1, rec_prob)
+    hazard_2 = sha.hazard.hazard_single(gm_prob_2, rec_prob)
     hazard_mean = np.average([hazard_1, hazard_2], weights=weights)
     hazard_models = pd.Series(data=[hazard_1, hazard_2], index=[0, 1])
 
-    adj_weights = disagg_mean_weights(
+    adj_weights = sha.disagg.disagg_mean_weights(
         hazard_mean, hazard_models, pd.Series(data=weights, index=[0, 1])
     )
     result = (disagg_models * adj_weights).sum(axis=1)
@@ -109,7 +104,7 @@ def test_epsilon_para(mu: float, sigma: float, gm_prob: float, expected: float):
     )
     gm_prob = pd.Series(index=["test_rupture"], data=[gm_prob])
 
-    result = epsilon_para(params_df, gm_prob)
+    result = sha.disagg.epsilon_para(params_df, gm_prob)
 
     assert np.isclose(result["test_rupture"], expected)
 
@@ -128,6 +123,6 @@ def test_epsilon_non_para(im_values: np.ndarray, gm_prob: float, expected: float
     """Tests the epsilon calculation for a non-parametric
     distribution (i.e. from IM values)
     """
-    result = epsilon_non_para_single(im_values, gm_prob)
+    result = sha.disagg.epsilon_non_para_single(im_values, gm_prob)
 
     assert np.isclose(result, expected, atol=1e-3)

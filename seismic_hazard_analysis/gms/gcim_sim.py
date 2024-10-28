@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
-from scipy import stats
+import scipy as sp
 
 
 def comp_weighted_corr_matrix(im_df: pd.DataFrame, alpha: pd.Series) -> pd.DataFrame:
@@ -104,7 +104,7 @@ def comp_kernel_weights(
     """
     n_sigmas = (np.log(IMj_series) - np.log(im_j)) / sigma_lnIMj
 
-    weights = stats.norm.pdf(n_sigmas)
+    weights = sp.stats.norm.pdf(n_sigmas)
     if std_th is not None:
         weights[np.abs(n_sigmas) > std_th] = 0
 

@@ -4,8 +4,10 @@ import numpy as np
 
 
 def get_im_correlations(IMi: str, IMj: str):
-    """Gets the correlation coefficients for the
-    specified IMs"""
+    """
+    Gets the correlation coefficients for the
+    specified IMs
+    """
     if IMi == IMj:
         return 1.0
 

@@ -3,11 +3,11 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PACKAGE NAME HERE"
+name = "Seismic Hazard Analysis"
 authors = [
     {name = "QuakeCoRE" },
 ]
-description = "PACKAGE DESCRIPTION HERE"
+description = "Code for performing seismic hazard analysis "
 readme = "README.md"
 requires-python = ">=3.9"
 dynamic = ["version", "dependencies"]
