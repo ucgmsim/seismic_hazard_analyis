@@ -1,4 +1,5 @@
 """Module for the computation of conditional IM distributions"""
+
 import numpy as np
 import pandas as pd
 

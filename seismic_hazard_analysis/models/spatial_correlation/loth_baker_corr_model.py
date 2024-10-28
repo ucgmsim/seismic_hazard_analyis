@@ -1,4 +1,5 @@
 """Implementation of the Loth & Baker (2013) site correlation model"""
+
 import numpy as np
 
 valid_periods = np.array([0.01, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 7.5, 10.0])

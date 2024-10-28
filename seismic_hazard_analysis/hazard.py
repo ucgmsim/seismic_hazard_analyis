@@ -1,4 +1,5 @@
 """Module for computing the seismic hazard"""
+
 from typing import Union
 
 import pandas as pd

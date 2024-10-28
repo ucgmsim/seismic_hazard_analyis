@@ -79,7 +79,7 @@ def bea20(
     S = -S if rupture_type == 2 and rake < 0 else S
     Srake = S * math.cos(math.radians(rake))
     D = max(D, 3)  # Gets the max value for D, 3 is the minimum
-    S2 = np.sqrt(Srake ** 2 + D ** 2)
+    S2 = np.sqrt(Srake**2 + D**2)
 
     # Predictor variable fs2
     if rupture_type == 1:
@@ -122,7 +122,7 @@ def bea20(
         ftheta = np.nan_to_num(np.sin(omega), nan=1)
 
     # Distance taper
-    R = np.sqrt(T ** 2 + Ry ** 2)  # Distance from surface trace
+    R = np.sqrt(T**2 + Ry**2)  # Distance from surface trace
     if M < 5:
         Rmax = 40
     elif M > 7:
@@ -164,7 +164,7 @@ def bea20(
 
     # Period dependent coefficients: a and b
     x = np.log10(periods / Tpeak)
-    b = bmax * np.exp((-(x ** 2)) / (2 * SigG ** 2))
+    b = bmax * np.exp((-(x**2)) / (2 * SigG**2))
     a = -b * fG0
 
     # No longer calculating fdi, instead compute for all periods listed

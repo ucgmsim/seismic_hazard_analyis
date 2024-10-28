@@ -10,4 +10,3 @@ from .distributions import (
     Multi_lnIM_IMj_Rup,
     Uni_lnIMi_IMj,
 )
-
