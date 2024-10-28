@@ -11,9 +11,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements.txt
+
       # Install deptry
       - run: pip install deptry
+      # Remove testing related packages
+      - run: sed -e '/pytest*/d' -i requirements.txt
+      # Install the remaining dependencies
+      - run: pip install -r requirements.txt
       # Remove pyproject.toml so that deptry doesn't get confused
       - run: rm pyproject.toml
       # Run deptry to check that all dependencies are present.
