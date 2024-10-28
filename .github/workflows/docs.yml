@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - tidy_up
     # Alternative: only build for tags.
     # tags:
     #   - '*'
