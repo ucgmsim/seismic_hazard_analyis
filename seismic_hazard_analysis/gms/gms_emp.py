@@ -8,13 +8,13 @@ Soil Dynamics and Earthquake Engineering 40 (2012): 48-61.
 Earthquake Engineering & Structural Dynamics 44.13 (2015): 2321-2340.
 """
 
-from typing import Iterable, Sequence, Tuple
+from typing import Iterable, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.linalg import cholesky
 
-from . import shared
+from .. import utils
 
 GM_SCALING_ALPHA = {
     "pga": 1,
@@ -57,7 +57,7 @@ def generate_correlated_vector(
     try:
         L = cholesky(rho, lower=True)
     except np.linalg.LinAlgError:
-        pd_rho = shared.nearest_pd(rho)
+        pd_rho = utils.nearest_pd(rho)
         L = cholesky(pd_rho, lower=True)
     v_vectors = [pd.DataFrame(data=np.dot(L, u.T).T, columns=IMs) for u in u_vectors]
 
