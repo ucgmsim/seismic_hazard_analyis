@@ -21,4 +21,6 @@ from . import (
     models,
     nzs1170p5,
     utils,
+    site_source,
+    nshm_2010,
 )

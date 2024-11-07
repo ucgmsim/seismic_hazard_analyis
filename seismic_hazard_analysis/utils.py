@@ -156,3 +156,58 @@ def is_pd(B):
         return True
     except sp.linalg.LinAlgError:
         return False
+
+
+def get_min_max_levels_for_im(im: str):
+    """Get minimum and maximum for the given im. Values for velocity are
+    given on cm/s, acceleration on cm/s^2 and Ds on s
+    """
+    if im.startswith("pSA"):
+        period = float(im.rsplit("_", 1)[-1])
+        if period <= 0.5:
+            return 0.005, 10.0
+        elif 0.5 < period <= 1.0:
+            return 0.005, 7.5
+        elif 1.0 < period <= 3.0:
+            return 0.0005, 5.0
+        elif 3.0 < period <= 5.0:
+            return 0.0005, 4.0
+        elif 5.0 < period <= 10.0:
+            return 0.0005, 3.0
+    if im.upper() == "PGA":
+        return 0.0001, 10.0
+    elif im.upper() == "PGV":
+        return 1.0, 400.0
+    elif im.upper() == "CAV":
+        return 0.0001 * 980, 20.0 * 980.0
+    elif im.upper() == "AI":
+        return 0.01, 1000.0
+    elif im.upper() == "DS575" or im.upper() == "DS595":
+        return 1.0, 400.0
+    elif im.upper() == "MMI":
+        return 1.0, 12.0
+    else:
+        raise ValueError("Invalid IM")
+
+
+def get_im_levels(im: str, n_values: int = 100):
+    """
+    Create an range of values for a given
+    IM according to their min, max
+    as defined by get_min_max_values
+
+    Parameters
+    ----------
+    im: IM
+        The IM Object to get im values for
+    n_values: int
+
+    Returns
+    -------
+    Array of IM values
+    """
+    start, end = get_min_max_levels_for_im(im)
+    im_values = np.logspace(
+        start=np.log(start), stop=np.log(end), num=n_values, base=np.e
+    )
+    return im_values

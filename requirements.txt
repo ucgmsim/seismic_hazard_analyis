@@ -3,3 +3,6 @@ numpy
 pandas
 pytest
 scipy
+tqdm
+source_modelling @ git+https://github.com/ucgmsim/source_modelling.git
+qcore @ git+https://github.com/ucgmsim/qcore.git
