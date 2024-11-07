@@ -135,18 +135,16 @@ def compute_sim_hazard(
     """
     rec_prob = 1 / flt_erf_df["recur_int_median"]
 
+    ims = site_im_df.columns if ims is None else ims
     if im_levels is not None:
         if any([True for cur_im in ims if cur_im not in im_levels]):
             raise ValueError(f"Not all IMs found in im_levels!")
-    ims = site_im_df.columns if ims is None else ims
 
     hazard_results = {}
     for cur_im in ims:
         cur_im_levels = utils.get_im_levels(cur_im)
         if im_levels is not None:
             cur_im_levels = im_levels.get(cur_im)
-            if cur_im_levels is None:
-                raise ValueError(f"{cur_im} not in im_levels")
 
         cur_gm_prob_excd = hazard.non_parametric_gm_excd_prob(
             cur_im_levels, site_im_df[cur_im]
