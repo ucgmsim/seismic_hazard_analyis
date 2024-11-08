@@ -5,6 +5,7 @@ import numpy as np
 
 from source_modelling import sources
 from qcore import nhm
+from qcore import coordinates as coords
 
 
 def read_ds_nhm(background_ffp: Path) -> pd.DataFrame:
@@ -25,7 +26,7 @@ def read_ds_nhm(background_ffp: Path) -> pd.DataFrame:
     return pd.read_csv(
         background_ffp,
         skiprows=5,
-        delim_whitespace=True,
+        sep="\s+",
         header=None,
         names=[
             "a",
@@ -89,15 +90,12 @@ def create_ds_fault_name(lat: float, lon: float, depth: float):
     return "{}_{}_{}".format(lat, lon, depth)
 
 
-def ds_nhm_to_rup_df(background_ffp: Path):
+def get_ds_rupture_df(background_ffp: Path):
     """
     Convert the background seismicity to a rupture dataframe.
     Magnitudes are sampled for each rupture.
 
-    This function does not calculate the recurrance rate,
-    that columns is left empty
-    :return: a rupture df which contains for each unique rupture:
-
+    Todo: This should be re-written and test cases added
 
     Parameters
     ----------
@@ -107,7 +105,7 @@ def ds_nhm_to_rup_df(background_ffp: Path):
     -------
     rupture_df
         A dataframe with columns rupture_name, fault_name, mag,
-        dip, rake, dbot, dtop, tect_type and reccurance_rate (empty)
+        dip, rake, dbot, dtop, tect_type, lat, lon, depth
     """
     background_df = read_ds_nhm(background_ffp)
     data = np.ndarray(
@@ -120,8 +118,10 @@ def ds_nhm_to_rup_df(background_ffp: Path):
             ("rake", np.float64),
             ("dbot", np.float64),
             ("dtop", np.float64),
-            ("tect_type", str, 64),
-            ("recurrance_rate", np.float64),
+            ("tectonic_type", str, 64),
+            ("lat", np.float64),
+            ("lon", np.float64),
+            ("depth", np.float64),
         ],
     )
 
@@ -151,17 +151,26 @@ def ds_nhm_to_rup_df(background_ffp: Path):
         data["dip"][index_mask] = line.dip
         data["dbot"][index_mask] = line.source_depth
         data["dtop"][index_mask] = line.source_depth
-        data["tect_type"][index_mask] = line.tect_type
+        data["tectonic_type"][index_mask] = line.tect_type
         data["mag"][index_mask] = sample_mags
+        data["lat"][index_mask] = line.source_lat
+        data["lon"][index_mask] = line.source_lon
+        data["depth"][index_mask] = line.source_depth
 
         index_mask[indexes[i] : indexes[i + 1]] = False  # reset the index mask
 
     rupture_df = pd.DataFrame(data=data)
     rupture_df["fault_name"] = rupture_df["fault_name"].astype("category")
     rupture_df["rupture_name"] = rupture_df["rupture_name"].astype("category")
-    rupture_df["tect_type"] = rupture_df["tect_type"].astype("category")
+    rupture_df["tectonic_type"] = rupture_df["tectonic_type"].astype("category")
+    rupture_df = rupture_df.set_index("rupture_name")
+
+    rupture_df[["nztm_y", "nztm_x", "depth"]] = coords.wgs_depth_to_nztm(
+        rupture_df[["lat", "lon", "depth"]].values
+    )
 
     return rupture_df
+
 
 def get_fault_objects(fault_nhm: nhm.NHMFault) -> sources.Fault:
     """

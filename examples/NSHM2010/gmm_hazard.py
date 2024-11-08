@@ -1,17 +1,17 @@
-import json
+"""
+Example for computing fault and distributed seismicity hazard
+using empirical GMMs for the 2010 NZ NSHM.
+"""
 from pathlib import Path
 
 import pandas as pd
-import numba as nb
 import numpy as np
 import qcore.nhm as nhm
-from source_modelling import sources
 from qcore import coordinates as coords
 import seismic_hazard_analysis as sha
 import matplotlib.pyplot as plt
 
 from empirical.util.classdef import TectType, GMM
-from empirical.util.openquake_wrapper_vectorized import oq_run
 
 # Periods to compute hazard for
 PERIODS = [
@@ -36,7 +36,7 @@ PERIODS = [
     0.8,
     0.9,
     1.0,
-    # 1.25,
+    1.25,
     1.2,
     1.5,
     2.0,
@@ -69,30 +69,50 @@ background_ffp = (
 ds_erf_ffp = Path(__file__).parent / "NZ_DSModel_2015.txt"
 fault_erf_ffp = Path(__file__).parent / "NZ_FLTModel_2010.txt"
 
-ds_erf_df = pd.read_csv(ds_erf_ffp)
+ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
+
 flt_erf = nhm.load_nhm(fault_erf_ffp)
 flt_erf_df = nhm.load_nhm_df(str(fault_erf_ffp))
 
+### DS Hazard
+ds_rupture_df = sha.nshm_2010.get_ds_rupture_df(
+    background_ffp, site_nztm, site_vs30, site_z1p0
+)
+ds_gm_params_df = sha.nshm_2010.get_emp_gm_params(ds_rupture_df, GMM_MAPPING, PERIODS)
+ds_hazard = sha.nshm_2010.compute_gmm_hazard(
+    ds_gm_params_df, ds_erf_df.annual_rec_prob, ims
+)
+
+### Fault Hazard
 # Create fault objects
 faults = {
     cur_name: sha.nshm_2010.get_fault_objects(cur_fault)
     for cur_name, cur_fault in flt_erf.items()
 }
 
-rupture_df = sha.nshm_2010.get_flt_rupture_df(
+flt_rupture_df = sha.nshm_2010.get_flt_rupture_df(
     faults, flt_erf_df, site_nztm, site_vs30, site_z1p0
 )
-gm_params_df = sha.nshm_2010.get_emp_gm_params(rupture_df, GMM_MAPPING, PERIODS)
-flt_hazard = sha.nshm_2010.compute_gmm_flt_hazard(gm_params_df, flt_erf_df, ims)
+flt_gm_params_df = sha.nshm_2010.get_emp_gm_params(flt_rupture_df, GMM_MAPPING, PERIODS)
+flt_hazard = sha.nshm_2010.compute_gmm_hazard(
+    flt_gm_params_df, 1 / flt_erf_df["recur_int_median"], ims
+)
 
-# Plot
+### Plot
 plot_im = "pSA_1.0"
 fig = plt.figure(figsize=(16, 10))
 
-plt.plot(flt_hazard[plot_im].index.values, flt_hazard[plot_im].values)
+plt.plot(flt_hazard[plot_im].index.values, flt_hazard[plot_im].values, label="Fault")
+plt.plot(ds_hazard[plot_im].index.values, ds_hazard[plot_im].values, label="DS")
+plt.plot(
+    ds_hazard[plot_im].index.values,
+    ds_hazard[plot_im].values + flt_hazard[plot_im].values,
+    label="Total",
+)
 plt.xlabel(f"{plot_im}")
 plt.ylabel("Annual Exceedance Probability")
 
+plt.legend()
 plt.xscale("log")
 plt.yscale("log")
 
@@ -100,5 +120,3 @@ fig.tight_layout()
 plt.show()
 
 print(f"wtf")
-
-

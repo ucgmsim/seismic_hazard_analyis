@@ -3,7 +3,7 @@ Example of computing PSHA for a single site based on
 CyberShake simulation results.
 
 If running with a complete CyberShake dataset, this script
-will consume a fair bit of memory.
+will consume a large amount of memory (i.e. use hypocentre).
 """
 from pathlib import Path
 
