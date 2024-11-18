@@ -1,8 +1,8 @@
 import math
 import numbers
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Union
-from collections.abc import Sequence
 
 import pandas as pd
 

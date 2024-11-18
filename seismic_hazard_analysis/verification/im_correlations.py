@@ -4,15 +4,14 @@ pSA produces period-based plots
 """
 
 import argparse
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 import seismic_hazard_analysis as sha
-
 
 DEFAULT_PERIODS = np.logspace(np.log(0.01000001), np.log(10.0), base=np.e)
 DEFAULT_PERIODS[-1] = 10.0

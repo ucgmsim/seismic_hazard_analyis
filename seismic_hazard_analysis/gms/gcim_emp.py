@@ -2,8 +2,8 @@
 Contains functions for computation of the empirically GMM (i.e. parametric) based GCIM
 """
 
-from typing import Union
 from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd

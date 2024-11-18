@@ -1,6 +1,5 @@
 import math
 import warnings
-from typing import Tuple
 
 import numpy as np
 
@@ -9,7 +8,7 @@ def bea20(
     M: float,
     U: np.ndarray,
     T: np.ndarray,
-    Smax: Tuple[float, float],
+    Smax: tuple[float, float],
     D: float,
     Tbot: float,
     Dbot: float,

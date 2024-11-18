@@ -103,7 +103,7 @@ def query_non_parametric_cdf(
     return np.asarray(y)
 
 
-def nearest_pd(A: np.ndarray[float]):  # noqa: E741
+def nearest_pd(A: np.ndarray[float]):
     """Find the nearest positive-definite matrix to input
 
     From stackoverflow:
@@ -139,7 +139,7 @@ def nearest_pd(A: np.ndarray[float]):  # noqa: E741
     # `spacing` will, for Gaussian random matrixes of small dimension, be on
     # othe order of 1e-16. In practice, both ways converge, as the unit test
     # below suggests.
-    I = np.eye(A.shape[0])
+    I = np.eye(A.shape[0])  # noqa: E741
     k = 1
     while not is_pd(A3):
         mineig = np.min(np.real(sp.linalg.eigvals(A3)))
