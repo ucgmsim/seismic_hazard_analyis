@@ -1,12 +1,11 @@
-from typing import Dict
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import scipy as sp
 
-import sha_calc.gcim.distributions as dist
-from . import shared
+from . import distributions as dist
 
 
 def plot_IMi_GMS(
@@ -41,13 +40,13 @@ def plot_IMi_GMS(
     alpha: float, optional
     """
 
-    def plot_cdf(values: np.ndarray, ax: plt.Axes, label: str, plot_kwargs: Dict):
+    def plot_cdf(values: np.ndarray, ax: plt.Axes, label: str, plot_kwargs: dict):
         values = np.sort(values)
         y_values = np.arange(0, values.size) / float(values.size)
         ax.step(values, y_values, label=label, **plot_kwargs)
         ax.plot([values[-1], values[-1]], [y_values[-1], 1.0], **plot_kwargs)
 
-    D_crit = shared.ks_critical_value(realisations.shape[0], alpha)
+    D_crit = sp.stats.ksone.ppf(1 - alpha / 2, realisations.shape[0])
 
     rel_values = np.sort(realisations.values)
     cdf_x, cdf_y = gcim.cdf.index.values, gcim.cdf.values
@@ -55,7 +54,7 @@ def plot_IMi_GMS(
     fig, ax = plt.subplots(figsize=(16, 10))
 
     plt.plot(cdf_x, cdf_y, "r-", label="GCIM distribution")
-    plt.plot(cdf_x, cdf_y + D_crit, "r--", label=fr"KS bounds, $\alpha={alpha}$")
+    plt.plot(cdf_x, cdf_y + D_crit, "r--", label=rf"KS bounds, $\alpha={alpha}$")
     plt.plot(cdf_x, cdf_y - D_crit, "r--")
 
     plot_cdf(rel_values, ax, "Realisations", {"c": "b", "linestyle": "-"})
@@ -97,7 +96,7 @@ def plot_IMi_GMS(
 
 
 def gen_GMS_plots(
-    gcim_dict: Dict[str, dist.Uni_lnIMi_IMj],
+    gcim_dict: dict[str, dist.Uni_lnIMi_IMj],
     realisations: pd.DataFrame,
     output_dir: str,
     sel_gms_IM_values: pd.DataFrame,
@@ -119,7 +118,7 @@ def gen_GMS_plots(
             realisations[IMi],
             str(output_dir / file_name),
             alpha=alpha,
-            sel_gms_IM_values=None
-            if sel_gms_IM_values is None
-            else sel_gms_IM_values[IMi],
+            sel_gms_IM_values=(
+                None if sel_gms_IM_values is None else sel_gms_IM_values[IMi]
+            ),
         )

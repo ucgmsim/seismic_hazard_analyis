@@ -1,9 +1,36 @@
-from .shared import (
-    query_non_parametric_cdf,
-    query_non_parametric_cdf_invs,
-    query_non_parametric_multi_cdf_invs,
-    nearest_pd,
-)
-from .gms_emp import generate_correlated_vector, gm_scaling, get_scale_alpha, compute_scaling_factor, apply_amp_scaling
+"""
+Functionality for running ground motion selection based on the Generalized Conditional Intensity Measure (GCIM) approach.
 
-from .plots import plot_IMi_GMS, gen_GMS_plots
+Modules:
+- distributions: Classes for the common distributions used in the GCIM approach.
+- gcim_emp: Functions for computing GCIM from empirical models.
+- gcim_sim: Functions for computing GCIM from physics-based GM simulations.
+- gms_emp: Functions for running ground motion selection based on the empirical GCIM.
+- plots: Functions for plotting GCIM and GMS results.
+
+References:
+- Bradley (2010), "A generalized conditional intensity measure approach and holistic ground-motion selection".
+- Bradley (2012), "A ground motion selection algorithm based on the generalized conditional intensity measure approach"
+- Bradley (2015), "Ground motion selection for simulation-based seismic hazard and structural reliability assessment"
+"""
+
+from . import gcim_emp, gcim_sim, gms_emp, plots
+from .distributions import (
+    CondIMjDist,
+    Multi_lnIM_IMj_Rup,
+    Uni_lnIMi_IMj,
+    Uni_lnIMi_IMj_Rup,
+    UniIMiDist,
+)
+
+__all__ = [
+    "gcim_emp",
+    "gcim_sim",
+    "gms_emp",
+    "plots",
+    "CondIMjDist",
+    "Multi_lnIM_IMj_Rup",
+    "Uni_lnIMi_IMj",
+    "Uni_lnIMi_IMj_Rup",
+    "UniIMiDist",
+]

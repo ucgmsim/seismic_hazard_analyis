@@ -1,21 +1,16 @@
-from typing import Union, Tuple, Sequence, List
+from collections.abc import Sequence
 
-import pandas as pd
 import numpy as np
-from scipy import stats
-from numpy import linalg as la
-from scipy.linalg import cholesky
-
-
-def ks_critical_value(n_trials, alpha):
-    return stats.ksone.ppf(1 - alpha / 2, n_trials)
+import scipy as sp
 
 
 def query_non_parametric_cdf_invs(
     y: np.ndarray, cdf_x: np.ndarray, cdf_y: np.ndarray
 ) -> np.ndarray:
-    """Retrieve the x-values for the specified y-values given the
+    """
+    Retrieve the x-values for the specified y-values given the
     non-parametric cdf function
+
     Note: Since this is for a discrete CDF,
     the inversion function returns the x value
     corresponding to F(x) >= y
@@ -35,7 +30,7 @@ def query_non_parametric_cdf_invs(
     assert cdf_y[0] >= 0.0 and np.isclose(cdf_y[-1], 1.0, rtol=1e-2)
     assert np.all((y > 0.0) & (y < 1.0))
 
-    mask, x = cdf_y >= y[:, np.newaxis], []
+    mask, _ = cdf_y >= y[:, np.newaxis], []
     return np.asarray(
         [cdf_x[np.min(np.flatnonzero(mask[ix, :]))] for ix in range(y.size)]
     )
@@ -43,9 +38,11 @@ def query_non_parametric_cdf_invs(
 
 def query_non_parametric_multi_cdf_invs(
     y: Sequence, cdf_x: np.ndarray, cdf_y: np.ndarray
-) -> List:
-    """Retrieve the x-values for the specified y-values given a
+) -> list:
+    """
+    Retrieve the x-values for the specified y-values given a
     multidimensional array of non-parametric cdf along each row
+
     Note: Since this is for a discrete CDF,
     the inversion function returns the x value
     corresponding to F(x) >= y
@@ -78,7 +75,8 @@ def query_non_parametric_multi_cdf_invs(
 def query_non_parametric_cdf(
     x: np.ndarray, cdf_x: np.ndarray, cdf_y: np.ndarray
 ) -> np.ndarray:
-    """Retrieve the y-values for the specified x-values given the
+    """
+    Retrieve the y-values for the specified x-values given the
     non-parametric cdf function
 
     Parameters
@@ -105,22 +103,7 @@ def query_non_parametric_cdf(
     return np.asarray(y)
 
 
-def __align_check_indices(
-    df_1: Union[pd.DataFrame, pd.Series], df_2: Union[pd.DataFrame, pd.Series]
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Checks that the indices of the two dataframes match exactly,
-    sorts the indices if required
-
-    Raises exception if they don't match
-    """
-    if np.any(df_1.index != df_2.index):
-        df_1.sort_index(inplace=True)
-        df_2.sort_index(inplace=True)
-        assert np.all(df_1.index == df_2.index), "The indices have to match"
-
-    return df_1, df_2
-
-def nearest_pd(A):
+def nearest_pd(A: np.ndarray[float]):
     """Find the nearest positive-definite matrix to input
 
     From stackoverflow:
@@ -135,7 +118,7 @@ def nearest_pd(A):
     matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
     """
     B = (A + A.T) / 2
-    _, s, V = la.svd(B)
+    _, s, V = sp.linalg.svd(B)
 
     H = np.dot(V.T, np.dot(np.diag(s), V))
 
@@ -146,7 +129,7 @@ def nearest_pd(A):
     if is_pd(A3):
         return A3
 
-    spacing = np.spacing(la.norm(A))
+    spacing = np.spacing(sp.linalg.norm(A))
     # The above is different from [1]. It appears that MATLAB's `chol` Cholesky
     # decomposition will accept matrixes with exactly 0-eigenvalue, whereas
     # Numpy's will not. So where [1] uses `eps(mineig)` (where `eps` is Matlab
@@ -156,25 +139,32 @@ def nearest_pd(A):
     # `spacing` will, for Gaussian random matrixes of small dimension, be on
     # othe order of 1e-16. In practice, both ways converge, as the unit test
     # below suggests.
-    I = np.eye(A.shape[0])
+    I = np.eye(A.shape[0])  # noqa: E741
     k = 1
     while not is_pd(A3):
-        mineig = np.min(np.real(la.eigvals(A3)))
-        A3 += I * (-mineig * k ** 2 + spacing)
+        mineig = np.min(np.real(sp.linalg.eigvals(A3)))
+        A3 += I * (-mineig * k**2 + spacing)
         k += 1
 
     return A3
 
 
-def is_pd(B):
-    """Returns true when input is positive-definite, via Cholesky"""
+def is_pd(B: np.ndarray[float]):
+    """
+    Returns true when input is positive-definite, via Cholesky
+
+    Parameters
+    ----------
+    B: np.ndarray[float]
+        The input matrix
+
+    Returns
+    -------
+    bool
+        True if positive-definite, False otherwise
+    """
     try:
-        _ = cholesky(B, lower=True)
+        _ = sp.linalg.cholesky(B, lower=True)
         return True
-    except la.LinAlgError:
+    except sp.linalg.LinAlgError:
         return False
-
-
-
-
-

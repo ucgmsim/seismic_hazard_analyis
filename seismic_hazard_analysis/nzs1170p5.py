@@ -1,4 +1,7 @@
-from typing import Sequence, Union
+"""Module for computing the NZS1170.5 response spectra"""
+
+from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 

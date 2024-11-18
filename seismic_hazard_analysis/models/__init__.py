@@ -1,2 +1,9 @@
-from .directivity.bea20 import bea20
-from .spatial_correlation import loth_baker_corr_model
+"""
+Models:
+loth_baker_corr_model: Implementation of the Loth and Baker (2013) spatial correlation model.
+bea20: Implementation of the Bayless 2020 model for directivity effects.
+"""
+
+from . import bea20, loth_baker_corr_model
+
+__all__ = ["bea20", "loth_baker_corr_model"]

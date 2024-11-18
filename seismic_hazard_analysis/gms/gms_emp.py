@@ -1,4 +1,5 @@
-"""Ground motion selection functionality for simulations based on the following papers:
+"""
+Ground motion selection functionality for simulations based on the following papers:
 - Bradley, Brendon A. "A generalized conditional intensity measure approach and holistic ground‐motion selection."
 Earthquake Engineering & Structural Dynamics 39.12 (2010): 1321-1342.
 - Bradley, Brendon A. "A ground motion selection algorithm based on the generalized conditional intensity measure approach."
@@ -6,14 +7,14 @@ Soil Dynamics and Earthquake Engineering 40 (2012): 48-61.
 - Bradley, Brendon A., Lynne S. Burks, and Jack W. Baker. "Ground motion selection for simulation‐based seismic hazard and structural reliability assessment."
 Earthquake Engineering & Structural Dynamics 44.13 (2015): 2321-2340.
 """
-from typing import Iterable, Tuple, Sequence
+
+from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
 from scipy.linalg import cholesky
 
-from . import shared
-
+from .. import utils
 
 GM_SCALING_ALPHA = {
     "pga": 1,
@@ -56,7 +57,7 @@ def generate_correlated_vector(
     try:
         L = cholesky(rho, lower=True)
     except np.linalg.LinAlgError:
-        pd_rho = shared.nearest_pd(rho)
+        pd_rho = utils.nearest_pd(rho)
         L = cholesky(pd_rho, lower=True)
     v_vectors = [pd.DataFrame(data=np.dot(L, u.T).T, columns=IMs) for u in u_vectors]
 
@@ -65,7 +66,7 @@ def generate_correlated_vector(
 
 def gm_scaling(
     im_df: pd.DataFrame, IM_j: str, im_j: float, IMs: np.ndarray
-) -> Tuple[pd.DataFrame, pd.Series]:
+) -> tuple[pd.DataFrame, pd.Series]:
     """Scales the IMs of the ground motions as specified in equations
     13 and 14 of "Bradley, B.A., 2012. A ground motion selection algorithm
     based on the generalized conditional intensity measure approach."
@@ -133,6 +134,7 @@ def get_scale_alpha(IMs: Iterable[str]):
 
     return pd.Series(data=alphas, index=IMs)
 
+
 def compute_scaling_factor(gm_im_values: pd.Series, im_name: str, im_value: float):
     """
     Computes the amplitude scaling factor such that IM_j == im_j
@@ -158,6 +160,7 @@ def compute_scaling_factor(gm_im_values: pd.Series, im_name: str, im_value: floa
     sf = np.power(im_value / gm_im_values, 1.0 / IMj_alpha)
 
     return sf
+
 
 def apply_amp_scaling(im_df: pd.DataFrame, sf: pd.Series):
     """
@@ -186,7 +189,9 @@ def apply_amp_scaling(im_df: pd.DataFrame, sf: pd.Series):
     IMs_alpha = get_scale_alpha(im_names)
 
     im_sf_df = pd.DataFrame(
-        index=sf.index, data=np.power(sf.values[:, np.newaxis], IMs_alpha.values[np.newaxis, :]), columns=im_names
+        index=sf.index,
+        data=np.power(sf.values[:, np.newaxis], IMs_alpha.values[np.newaxis, :]),
+        columns=im_names,
     )
 
     scaled_im_df = im_df * im_sf_df

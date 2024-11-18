@@ -1,10 +1,10 @@
 import math
 import numbers
-from typing import Sequence, Union, Tuple
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Union
 
 import pandas as pd
-
 
 R_T_DICT = {
     "RotD100/RotD50": {
@@ -24,7 +24,7 @@ def get_component_ratio(
     wanted_component: str,
     magnitude: Union[float, pd.Series] = 2,
     period: float = None,
-) -> Tuple[Union[float, pd.Series], Union[float, pd.Series]]:
+) -> tuple[Union[float, pd.Series], Union[float, pd.Series]]:
     """
     Retrieves the average IM component ratio for the specified magnitude from the electronic supplement of paper
     "Relations between Some Horizontal-Component Ground-Motion Intensity Measures Used in Practice (Boore 2017)".
@@ -76,7 +76,11 @@ def get_component_ratio(
         mmin, mmax = _get_min_max_mag(mag)
         file_name = f"{current_component}_min_{mmin}_max_{mmax}.csv"
         df = pd.read_csv(
-            Path(__file__).resolve().parent / "models" / "im_component" / "David_M_Boore_2017" / file_name
+            Path(__file__).resolve().parent
+            / "models"
+            / "im_component"
+            / "David_M_Boore_2017"
+            / file_name
         )
 
         # Get the ratios of interest

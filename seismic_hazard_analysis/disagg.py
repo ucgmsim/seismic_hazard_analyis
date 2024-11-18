@@ -1,11 +1,43 @@
-import pandas as pd
+"""Module for disaggregation of seismic hazard"""
+
 import numpy as np
+import pandas as pd
 import scipy.stats as stats
 
-from sha_calc.hazard import hazard_single
+from .hazard import hazard_single
 
 
 def disagg_equal(gm_prob: pd.Series, gm_prob_delta: pd.Series, rec_prop: pd.Series):
+    """
+    Computes the contribution for each rupture
+    for being equal to a specific IM value within
+    the specified delta.
+
+    See equation 6 and 7 in [1]
+
+    Parameters
+    ----------
+    gm_prob: pd.Series
+        The ground motion probabilities.
+        format: index = rupture_id, values = probability
+    gm_prob_delta: pd.Series
+        The GM delta per IM
+    rec_prob: pd.Series
+        The recurrence probabilities of the ruptures.
+        format: index = rupture_id, values = probability
+
+    Returns
+    -------
+    pd.Series
+        Contribution per rupture
+        format: index = rupture_name, values = contribution
+
+    References
+    ----------
+    [1] Bradley, Brendon A. "A generalized conditional intensity
+        measure approach and holistic ground‐motion selection."
+        Earthquake Engineering & Structural Dynamics 39.12 (2010): 1321-1342.
+    """
     # Calculate exceedance probability (hazard)
     excd_prob = hazard_single(gm_prob, rec_prop)
     excd_prob_delta = hazard_single(gm_prob_delta, rec_prop)
@@ -23,22 +55,23 @@ def disagg_equal(gm_prob: pd.Series, gm_prob_delta: pd.Series, rec_prop: pd.Seri
 def disagg_exceedance(
     gm_prob: pd.Series, rec_prob: pd.Series, excd_prob: float = None
 ) -> pd.Series:
-    """Calculates the contribution for each rupture for exceeding
-     the specified IM level (implicitly defined via gm_prob)
+    """
+    Calculates the contribution for each rupture for exceeding
+    the specified IM level (implicitly defined via gm_prob).
 
     Note: All ruptures specified in gm_prob have to exist
-    in rec_prob
+    in rec_prob.
 
     Parameters
     ----------
     gm_prob: pd.Series
-        The ground motion probabilities
+        The ground motion probabilities.
         format: index = rupture_id, values = probability
     rec_prob: pd.Series
-        The recurrence probabilities of the ruptures
+        The recurrence probabilities of the ruptures.
         format: index = rupture_id, values = probability
     excd_prob: float, optional
-        The exceedance probability to use for the calculation
+        The exceedance probability to use for the calculation.
         Is calculated from the passed in data, however
         this will not be correct if only for example
         the fault portion of the data is passed in.
@@ -61,8 +94,9 @@ def disagg_exceedance(
 def disagg_exceedance_multi(
     gm_prob_df: pd.DataFrame, rec_prob: pd.Series, excd_prob: pd.Series
 ) -> pd.DataFrame:
-    """Calculates the contribution for each rupture for
-     exceeding the specified IM levels (implicitly defined via gm_prob)
+    """
+    Calculates the contribution for each rupture for
+    exceeding the specified IM levels (implicitly defined via gm_prob)
 
     Note: All ruptures specified in gm_prob have to exist
     in rec_prob

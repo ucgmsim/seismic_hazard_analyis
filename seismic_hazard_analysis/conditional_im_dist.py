@@ -1,3 +1,5 @@
+"""Module for the computation of conditional IM distributions"""
+
 import numpy as np
 import pandas as pd
 
@@ -9,10 +11,9 @@ def compute_cond_lnIM_dist(
     R: pd.DataFrame,
 ):
     """
-    Compues the lnIM distribution for a site of interest
-        conditioned on observations (from the same event);
-        with the marginal distribution given by a
-        empirical GMMs
+    Computes the lnIM distribution for a site of interest
+    conditioned on observations (from the same event);
+    with the marginal distribution given by an empirical GMM
 
     Parameters
     ----------
@@ -129,14 +130,15 @@ def compute_cond_lnIM_dist(
         C_c_inv,
         within_residual.values,
     )
-    cond_within_residual_sigma = np.sqrt(gm_params_df.loc[
-        station, "sigma_within"
-    ] ** 2 - np.einsum(
-        "i, ij, j -> ",
-        within_residual_cov.values[0, 1:],
-        C_c_inv,
-        within_residual_cov.values[1:, 0],
-    ))
+    cond_within_residual_sigma = np.sqrt(
+        gm_params_df.loc[station, "sigma_within"] ** 2
+        - np.einsum(
+            "i, ij, j -> ",
+            within_residual_cov.values[0, 1:],
+            C_c_inv,
+            within_residual_cov.values[1:, 0],
+        )
+    )
 
     # Define the conditional lnIM distriubtion
     cond_lnIM_mu = (
