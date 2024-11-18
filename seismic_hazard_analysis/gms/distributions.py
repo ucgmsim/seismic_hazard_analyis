@@ -75,6 +75,7 @@ class Uni_lnIMi_IMj_Rup(UniIMiDist, CondIMjDist):
 
     @staticmethod
     def combine(uni_lnIMi_IMj_Rup: dict[str, "Uni_lnIMi_IMj_Rup"]):
+        """Combines multiple uni-variate IMi|IMj,Rup distributions"""
         IMs = np.asarray(list(uni_lnIMi_IMj_Rup.keys()))
         mu_df = pd.concat([uni_lnIMi_IMj_Rup[IMi].mu for IMi in IMs], axis=1)
         sigma_df = pd.concat([uni_lnIMi_IMj_Rup[IMi].sigma for IMi in IMs], axis=1)
