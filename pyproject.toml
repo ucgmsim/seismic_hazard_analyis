@@ -39,9 +39,14 @@ extend-select = [
   # Missing function argument type-annotation
   "ANN001",
   # Using except without specifying an exception type to catch
-  "BLE001"
+  "BLE001",
 ]
-ignore = ["D104"]
+ignore = [
+  "D104",
+  # Ignore lowercase name checking
+  "N802",
+  "N806",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

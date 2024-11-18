@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import scipy as sp
@@ -30,7 +30,7 @@ def query_non_parametric_cdf_invs(
     assert cdf_y[0] >= 0.0 and np.isclose(cdf_y[-1], 1.0, rtol=1e-2)
     assert np.all((y > 0.0) & (y < 1.0))
 
-    mask, x = cdf_y >= y[:, np.newaxis], []
+    mask, _ = cdf_y >= y[:, np.newaxis], []
     return np.asarray(
         [cdf_x[np.min(np.flatnonzero(mask[ix, :]))] for ix in range(y.size)]
     )
@@ -38,7 +38,7 @@ def query_non_parametric_cdf_invs(
 
 def query_non_parametric_multi_cdf_invs(
     y: Sequence, cdf_x: np.ndarray, cdf_y: np.ndarray
-) -> List:
+) -> list:
     """
     Retrieve the x-values for the specified y-values given a
     multidimensional array of non-parametric cdf along each row
@@ -103,7 +103,7 @@ def query_non_parametric_cdf(
     return np.asarray(y)
 
 
-def nearest_pd(A):
+def nearest_pd(A: np.ndarray[float]):  # noqa: E741
     """Find the nearest positive-definite matrix to input
 
     From stackoverflow:
@@ -149,8 +149,20 @@ def nearest_pd(A):
     return A3
 
 
-def is_pd(B):
-    """Returns true when input is positive-definite, via Cholesky"""
+def is_pd(B: np.ndarray[float]):
+    """
+    Returns true when input is positive-definite, via Cholesky
+
+    Parameters
+    ----------
+    B: np.ndarray[float]
+        The input matrix
+
+    Returns
+    -------
+    bool
+        True if positive-definite, False otherwise
+    """
     try:
         _ = sp.linalg.cholesky(B, lower=True)
         return True
