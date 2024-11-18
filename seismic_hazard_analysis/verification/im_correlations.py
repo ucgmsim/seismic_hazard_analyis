@@ -13,6 +13,7 @@ import pandas as pd
 
 import seismic_hazard_analysis as sha
 
+
 DEFAULT_PERIODS = np.logspace(np.log(0.01000001), np.log(10.0), base=np.e)
 DEFAULT_PERIODS[-1] = 10.0
 DEFAULT_IMS = ["PGA", "PGV", "CAV", "ASI", "DSI", "SI", "Ds575", "Ds595", "AI"]

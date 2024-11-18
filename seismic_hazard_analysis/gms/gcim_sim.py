@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pandas as pd
 import scipy as sp
@@ -45,7 +43,7 @@ def comp_weighted_corr_matrix(im_df: pd.DataFrame, alpha: pd.Series) -> pd.DataF
 
 def comp_weighted_CDF(
     im_df: pd.DataFrame, alpha: pd.Series
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Computes the non-parametric marginal weighted CDF for each IM
 
     Parameters
