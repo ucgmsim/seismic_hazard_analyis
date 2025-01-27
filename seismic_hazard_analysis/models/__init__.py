@@ -5,3 +5,5 @@ bea20: Implementation of the Bayless 2020 model for directivity effects.
 """
 
 from . import bea20, loth_baker_corr_model
+
+__all__ = ["bea20", "loth_baker_corr_model"]

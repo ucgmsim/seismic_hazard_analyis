@@ -4,8 +4,8 @@ pSA produces period-based plots
 """
 
 import argparse
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +23,7 @@ def main(
     pSA_periods: Sequence[float] = DEFAULT_PERIODS,
     ims: Sequence[str] = DEFAULT_IMS,
 ):
+    """Runs the verification"""
     pSA_periods = np.sort(np.asarray(pSA_periods))
     pSA_ims = np.char.add("pSA_", pSA_periods.astype(str))
     # Generate the plots
@@ -54,6 +55,7 @@ def main(
 
 
 def parse_args():
+    """Parses CLI arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=Path)
 

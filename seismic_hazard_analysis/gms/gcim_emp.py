@@ -2,7 +2,8 @@
 Contains functions for computation of the empirically GMM (i.e. parametric) based GCIM
 """
 
-from typing import Dict, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from . import distributions as dist
 
 def compute_rupture_weights(
     im_j: float,
-    branch_data: Dict[str, Tuple[pd.DataFrame, pd.Series]],
+    branch_data: dict[str, tuple[pd.DataFrame, pd.Series]],
     im_j_delta: float = 0.001,
 ) -> pd.Series:
     """
@@ -64,7 +65,7 @@ def compute_rupture_weights(
     return P_Rup_IMj
 
 
-def comb_lnIMi_IMj(lnIMi_IMj: Dict[str, dist.Uni_lnIMi_IMj], weights: pd.Series):
+def comb_lnIMi_IMj(lnIMi_IMj: dict[str, dist.Uni_lnIMi_IMj], weights: pd.Series):
     """
     Combines multiple marginal (univariate) lnIMi|IMj distributions
     according to the given weights
@@ -146,11 +147,11 @@ def comb_lnIMi_IMj(lnIMi_IMj: Dict[str, dist.Uni_lnIMi_IMj], weights: pd.Series)
 
 
 def compute_lnIMi_IMj(
-    uni_lnIMi_IMj_Rup: Dict[str, dist.Uni_lnIMi_IMj_Rup],
+    uni_lnIMi_IMj_Rup: dict[str, dist.Uni_lnIMi_IMj_Rup],
     P_Rup_IMj: pd.Series,
     IMj: str,
     im_j: float,
-) -> Dict[str, dist.Uni_lnIMi_IMj]:
+) -> dict[str, dist.Uni_lnIMi_IMj]:
     """Computes the marginal (univariate)
     distribution lnIMi|IMj for each IMi
 
@@ -237,7 +238,7 @@ def compute_lnIMi_IMj_Rup(
     corr_coeff: pd.Series,
     IMj: str,
     im_j: float,
-) -> Dict[str, dist.Uni_lnIMi_IMj_Rup]:
+) -> dict[str, dist.Uni_lnIMi_IMj_Rup]:
     """Computes the univariate lnIMi|IMj,Rup distribution
      for each IMi using vectorization
 
@@ -336,7 +337,7 @@ def __compute_lnIMi_IMj_Rup_params(
 
 
 def get_multi_IM_IMj_Rup(
-    uni_lnIMi_IMj_Rup: Dict[str, dist.Uni_lnIMi_IMj_Rup], IMj: str, im_j: float
+    uni_lnIMi_IMj_Rup: dict[str, dist.Uni_lnIMi_IMj_Rup], IMj: str, im_j: float
 ) -> dist.Multi_lnIM_IMj_Rup:
     """Computes the correlation matrix and creates
     the multivariate lognormal IM|IMj,Rup distribution

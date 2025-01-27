@@ -1,5 +1,3 @@
-from typing import Dict, Tuple
-
 import numpy as np
 
 
@@ -133,7 +131,6 @@ def bradley_correlations_2011(IMi: str, IMj: str):
         ("ds595", "si"): -0.079,
         ("ds595", "dsi"): 0.163,
         ("ds595", "cav"): 0.122,
-        ("ds595", "cav"): 0.122,
         ("ds595", "ds575"): 0.843,
     }
 
@@ -221,14 +218,14 @@ def bradley_correlations_2011(IMi: str, IMj: str):
     return None
 
 
-def _check_IM_comb(IMi: str, IMj: str, im_comb: Tuple[str, str]):
+def _check_IM_comb(IMi: str, IMj: str, im_comb: tuple[str, str]):
     """Checks if the given IMs match the specified combination"""
     return (IMi == im_comb[0] and IMj == im_comb[1]) or (
         IMj == im_comb[0] and IMi == im_comb[1]
     )
 
 
-def _get_IM_comb_value(IMi: str, IMj: str, lookup: Dict[Tuple[str, str], float]):
+def _get_IM_comb_value(IMi: str, IMj: str, lookup: dict[tuple[str, str], float]):
     """Retrieves the value corresponding to
     the specified IM combination"""
     r_1, r_2 = lookup.get((IMi, IMj)), lookup.get((IMj, IMi))

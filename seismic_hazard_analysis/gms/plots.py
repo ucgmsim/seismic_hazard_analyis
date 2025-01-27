@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -41,7 +40,7 @@ def plot_IMi_GMS(
     alpha: float, optional
     """
 
-    def plot_cdf(values: np.ndarray, ax: plt.Axes, label: str, plot_kwargs: Dict):
+    def plot_cdf(values: np.ndarray, ax: plt.Axes, label: str, plot_kwargs: dict):
         values = np.sort(values)
         y_values = np.arange(0, values.size) / float(values.size)
         ax.step(values, y_values, label=label, **plot_kwargs)
@@ -97,7 +96,7 @@ def plot_IMi_GMS(
 
 
 def gen_GMS_plots(
-    gcim_dict: Dict[str, dist.Uni_lnIMi_IMj],
+    gcim_dict: dict[str, dist.Uni_lnIMi_IMj],
     realisations: pd.DataFrame,
     output_dir: str,
     sel_gms_IM_values: pd.DataFrame,

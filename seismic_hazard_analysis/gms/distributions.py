@@ -2,7 +2,7 @@
 Representation for the different distributions used for GMS
 """
 
-from typing import Dict, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,7 @@ class CondIMjDist:
     """
 
     def __init__(self, IMj: str, im_j: float):
+        """Constructor, see class docstring for more info"""
         self.IMj, self.im_j = IMj, im_j
 
 
@@ -42,6 +43,7 @@ class UniIMiDist:
     """
 
     def __init__(self, IMi: str):
+        """Constructor, see class docstring for more info"""
         self.IMi = IMi
 
 
@@ -65,13 +67,15 @@ class Uni_lnIMi_IMj_Rup(UniIMiDist, CondIMjDist):
     def __init__(
         self, mu: pd.Series, sigma: pd.Series, IMi: str, IMj: str, im_j: float
     ):
+        """Constructor, see class docstring for more info"""
         UniIMiDist.__init__(self, IMi)
         CondIMjDist.__init__(self, IMj, im_j)
 
         self.mu, self.sigma = mu, sigma
 
     @staticmethod
-    def combine(uni_lnIMi_IMj_Rup: Dict[str, "Uni_lnIMi_IMj_Rup"]):
+    def combine(uni_lnIMi_IMj_Rup: dict[str, "Uni_lnIMi_IMj_Rup"]):
+        """Combines multiple uni-variate IMi|IMj,Rup distributions"""
         IMs = np.asarray(list(uni_lnIMi_IMj_Rup.keys()))
         mu_df = pd.concat([uni_lnIMi_IMj_Rup[IMi].mu for IMi in IMs], axis=1)
         sigma_df = pd.concat([uni_lnIMi_IMj_Rup[IMi].sigma for IMi in IMs], axis=1)
@@ -111,6 +115,7 @@ class Multi_lnIM_IMj_Rup(CondIMjDist):
         IMj: str,
         im_j: float,
     ):
+        """Constructor, see class docstring for more info"""
         super().__init__(IMj, im_j)
 
         self.IMs = IMs
@@ -148,6 +153,7 @@ class Uni_lnIMi_IMj(UniIMiDist, CondIMjDist):
         mu: float = None,
         sigma: float = None,
     ):
+        """Constructor, see class docstring for more info"""
         UniIMiDist.__init__(self, IMi)
         CondIMjDist.__init__(self, IMj, im_j)
 
@@ -157,6 +163,7 @@ class Uni_lnIMi_IMj(UniIMiDist, CondIMjDist):
         self.sigma = sigma
 
     def compatible(self, other: "Uni_lnIMi_IMj"):
+        """Checks if this Uni_lnIMi_IMj is compatible with another"""
         return (
             self.IMi == other.IMi and self.IMj == other.IMj and self.im_j == other.im_j
         )

@@ -1,7 +1,8 @@
 import math
 import numbers
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, Tuple, Union
+from typing import Union
 
 import pandas as pd
 
@@ -23,7 +24,7 @@ def get_component_ratio(
     wanted_component: str,
     magnitude: Union[float, pd.Series] = 2,
     period: float = None,
-) -> Tuple[Union[float, pd.Series], Union[float, pd.Series]]:
+) -> tuple[Union[float, pd.Series], Union[float, pd.Series]]:
     """
     Retrieves the average IM component ratio for the specified magnitude from the electronic supplement of paper
     "Relations between Some Horizontal-Component Ground-Motion Intensity Measures Used in Practice (Boore 2017)".
