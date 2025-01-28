@@ -44,7 +44,7 @@ def parametric_gm_excd_prob(
     im_levels: Union[float, np.ndarray],
     im_params: pd.DataFrame,
     mean_col: str = "mu",
-    std_col="sigma",
+    std_col: str="sigma",
 ):
     """
     Computes the GM exceedance probability for each IM level over all

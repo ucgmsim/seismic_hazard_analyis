@@ -1,18 +1,15 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, Optional
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-
-from source_modelling import sources
-from empirical.util.classdef import TectType, GMM
+from empirical.util.classdef import GMM, TectType
 from empirical.util.openquake_wrapper_vectorized import oq_run
+from source_modelling import sources
 
-from .. import site_source
-from .. import hazard
-from .. import utils
+from .. import hazard, site_source, utils
 from . import utils as nshm2010_utils
 
 TECTONIC_TYPE_MAPPING = {
@@ -160,7 +157,7 @@ def get_emp_gm_params(
     return gm_params_df
 
 
-def get_ds_rupture_df(
+def get_oq_ds_rupture_df(
     background_ffp: Path,
     site_nztm: np.ndarray[float],
     site_vs30: float,
@@ -251,7 +248,7 @@ def compute_gmm_hazard(
     """
     if im_levels is not None:
         if any([True for cur_im in ims if cur_im not in im_levels]):
-            raise ValueError(f"Not all IMs found in im_levels!")
+            raise ValueError("Not all IMs found in im_levels!")
 
     hazard_results = {}
     for cur_im in ims:

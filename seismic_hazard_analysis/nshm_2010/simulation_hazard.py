@@ -3,16 +3,15 @@ Module for computing the seismic hazard for the
 New Zealand 2010 Seismic Hazard Model using
 the results from physics-based GM simulations
 """
-from typing import Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from .. import utils
-from .. import hazard
+from .. import hazard, utils
 
 
 def load_sim_im_data(im_data_dir: Path):
@@ -138,7 +137,7 @@ def compute_sim_hazard(
     ims = site_im_df.columns if ims is None else ims
     if im_levels is not None:
         if any([True for cur_im in ims if cur_im not in im_levels]):
-            raise ValueError(f"Not all IMs found in im_levels!")
+            raise ValueError("Not all IMs found in im_levels!")
 
     hazard_results = {}
     for cur_im in ims:

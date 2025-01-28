@@ -63,7 +63,7 @@ def test_two_rupture_multi_IM():
 
 
 def test_non_parametric_gm_prob():
-    im_level = 2
+    im_level = np.array([2])
     index_tuples = [
         ("rupture_1", "rel_1"),
         ("rupture_1", "rel_2"),
@@ -77,8 +77,8 @@ def test_non_parametric_gm_prob():
     im_values = pd.Series(index=index, data=values)
     result = sha.hazard.non_parametric_gm_excd_prob(im_level, im_values)
 
-    assert result.loc["rupture_1"] == 0.5
-    assert result.loc["rupture_2"] == 2 / 3
+    assert np.isclose(result.loc["rupture_1", 2], 0.5)
+    assert np.isclose(result.loc["rupture_2", 2], 2 / 3)
 
 
 def test_parametric_gm_prob():

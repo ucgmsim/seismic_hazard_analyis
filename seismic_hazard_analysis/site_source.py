@@ -1,7 +1,5 @@
 """Module for computing site-source distances"""
 
-from typing import List
-
 import numba as nb
 import numpy as np
 import pandas as pd
@@ -9,7 +7,7 @@ import pandas as pd
 
 def get_scenario_distances(
     scenario_ids: np.ndarray[int],
-    scenario_section_ids: List[np.ndarray[int]],
+    scenario_section_ids: list[np.ndarray[int]],
     segment_nztm_coords: np.ndarray,
     segment_section_ids: np.ndarray,
     site_nztm_coords: np.ndarray,
@@ -932,7 +930,7 @@ def compute_single_scenario_distances(
 )
 def compute_scenario_distances(
     scenario_ids: np.ndarray,
-    scenario_section_ids: List[np.ndarray],
+    scenario_section_ids: list[np.ndarray],
     segment_nztm_coords: np.ndarray,
     segment_strike_vec: np.ndarray,
     segment_trace_length: np.ndarray,

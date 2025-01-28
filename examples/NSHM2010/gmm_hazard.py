@@ -2,16 +2,17 @@
 Example for computing fault and distributed seismicity hazard
 using empirical GMMs for the 2010 NZ NSHM.
 """
+
 from pathlib import Path
 
-import pandas as pd
-import numpy as np
-import qcore.nhm as nhm
-from qcore import coordinates as coords
-import seismic_hazard_analysis as sha
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
-from empirical.util.classdef import TectType, GMM
+import qcore.nhm as nhm
+import seismic_hazard_analysis as sha
+from empirical.util.classdef import GMM, TectType
+from qcore import coordinates as coords
 
 # Periods to compute hazard for
 PERIODS = [
@@ -75,7 +76,7 @@ flt_erf = nhm.load_nhm(fault_erf_ffp)
 flt_erf_df = nhm.load_nhm_df(str(fault_erf_ffp))
 
 ### DS Hazard
-ds_rupture_df = sha.nshm_2010.get_ds_rupture_df(
+ds_rupture_df = sha.nshm_2010.get_oq_ds_rupture_df(
     background_ffp, site_nztm, site_vs30, site_z1p0
 )
 ds_gm_params_df = sha.nshm_2010.get_emp_gm_params(ds_rupture_df, GMM_MAPPING, PERIODS)

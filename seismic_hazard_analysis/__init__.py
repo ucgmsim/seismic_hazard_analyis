@@ -19,10 +19,10 @@ from . import (
     hazard,
     im_correlations,
     models,
-    nzs1170p5,
-    utils,
-    site_source,
     nshm_2010,
+    nzs1170p5,
+    site_source,
+    utils,
 )
 
 __all__ = [
@@ -32,6 +32,8 @@ __all__ = [
     "hazard",
     "im_correlations",
     "models",
+    "nshm_2010",
     "nzs1170p5",
+    "site_source",
     "utils",
 ]
