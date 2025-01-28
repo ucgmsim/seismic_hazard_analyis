@@ -185,18 +185,22 @@ def get_fault_objects(fault_nhm: nhm.NHMFault) -> sources.Fault:
     sources.Fault
         Source object representing the fault
     """
-    n_planes = fault_nhm.trace.shape[0] - 1
+    # Perform the conversion to NZTM coordinates here to ensure
+    # that the dip direction is consistent across all planes
+    trace_points_nztm = coords.wgs_depth_to_nztm(fault_nhm.trace[:, ::-1])
+    dip_dir_nztm = coords.great_circle_bearing_to_nztm_bearing(fault_nhm.trace[0, ::-1], 1, fault_nhm.dip_dir)
 
+    n_planes = fault_nhm.trace.shape[0] - 1
     planes = []
     for i in range(n_planes):
-        trace_corners = np.asarray([fault_nhm.trace[i], fault_nhm.trace[i + 1]])
-        plane = sources.Plane.from_trace(
-            trace_corners[:, [1, 0]],
+        plane = sources.Plane.from_nztm_trace(
+            np.array([trace_points_nztm[i], trace_points_nztm[i + 1]]),
             fault_nhm.dtop,
             fault_nhm.dbottom,
             fault_nhm.dip,
-            fault_nhm.dip_dir,
+            dip_dir_nztm if not np.isclose(fault_nhm.dip, 90) else 0,
         )
         planes.append(plane)
 
+    fault = sources.Fault(planes)
     return sources.Fault(planes)
