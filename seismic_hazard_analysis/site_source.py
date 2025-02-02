@@ -125,7 +125,6 @@ def compute_scenario_strike(
     # unique_trace_points = np.unique(
     #     trace_points.transpose((0, 2, 1)).reshape((-1, 2)), axis=0
     # )
-
     # Numba does not support the axis keyword for np.unique
     # However, getting the subset of unique trace points
     # merely reduces the iteration for distance matrix computation,
@@ -267,8 +266,8 @@ def compute_segment_strike_nztm(segment_nztm_coords: np.ndarray):
         The NZTM coordinates of the segment corners
         Assumes that the first and third point
         define the trace of the fault with the
-        and that the second and fourth point
-        are the corresponding down dip points
+        second and fourth point are the 
+        corresponding down dip points
 
         shape: [4, 2, n_faults], (x, y)
 
@@ -284,29 +283,6 @@ def compute_segment_strike_nztm(segment_nztm_coords: np.ndarray):
     s1 = segment_nztm_coords[2, :2, :] - segment_nztm_coords[0, :2, :]
     s1 = s1 / np.linalg.norm(s1, axis=0)
     strike_1 = np.mod(np.degrees(np.arctan2(s1[0, :], s1[1, :])), 360)
-
-    # Assume the strike is defined from point 0 -> point 2
-    # This did not hold for the new NSHM rupture definitions hence the logic below
-    # However, the below does not work for faults with dip=90 degrees
-    # TODO: Fix this!!
-
-    # s2 = segment_nztm_coords[0, :2, :] - segment_nztm_coords[2, :2, :]
-    # s2 = s2 / np.linalg.norm(s2, axis=0)
-    # strike_2 = np.mod(np.degrees(np.arctan2(s2[0, :], s2[1, :])), 360)
-    #
-    # # Compute one of the down dip vectors (surface projection)
-    # d1 = segment_nztm_coords[1, :2, :] - segment_nztm_coords[0, :2, :]
-    # d1 = d1 / np.linalg.norm(d1, axis=0)
-    # phi_1 = np.degrees(np.arccos(np.einsum("ij,ij->j", s1, d1)))
-    # gamma_1 = np.mod(np.degrees(np.arctan2(d1[0, :], d1[1, :])), 360)
-    #
-    # # Choose the correct strike vector
-    # strike = np.where(
-    #     (mask := np.isclose(strike_1 + phi_1, gamma_1)),
-    #     strike_1,
-    #     strike_2,
-    # )
-    # strike_vector = np.where(mask, s1, s2)
 
     return strike_1, s1
 
@@ -781,13 +757,13 @@ def compute_single_scenario_distances(
     Returns
     -------
     rjb: float
-        R_JB distance for this scenario
+        R_JB distance for this scenario (km)
     rrup: float
-        R_RUP distance for this scenario
+        R_RUP distance for this scenario (km)
     rx: float
-        R_X distance for this scenario
+        R_X distance for this scenario (km)
     ry: float
-        R_Y distance for this scenario
+        R_Y distance for this scenario (km)
     """
     # Compute the segment mask for the current scenario
     # scenario_segment_mask = np.isin(segment_section_ids, section_ids)

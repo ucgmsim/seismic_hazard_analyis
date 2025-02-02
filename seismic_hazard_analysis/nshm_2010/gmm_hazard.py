@@ -90,7 +90,6 @@ def get_flt_rupture_df(
         scenario_section_ids,
         plane_nztm_coords,
         segment_section_ids,
-        # site_nztm[0, [1, 0, 2]],
         site_nztm,
     )
 
