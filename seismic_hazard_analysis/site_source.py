@@ -329,9 +329,6 @@ def compute_segment_distances(
     ry_origins: array of floats
         shape: [2, n_segments]
         The origin used for each Ry calculation
-    segment_section_ids: array of ints
-        shape: [n_segments]
-        Section ID for each segment
     """
     # Check if all points of each segment are coplanar
     # I.e. All four points of a segment lie on the same plane

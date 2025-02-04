@@ -127,7 +127,8 @@ def get_emp_gm_params(
         OpenQuake GMM wrapper.
     gmm_mapping: dict
         Specifies the GMM to use for each tectonic type
-    pSA_periods:
+    pSA_periods: list[float]
+        The periods for which to compute the GM parameters
 
     Returns
     -------
