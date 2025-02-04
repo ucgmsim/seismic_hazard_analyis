@@ -58,10 +58,10 @@ GMM_MAPPING = {
 ims = [f"pSA_{cur_period}" for cur_period in PERIODS]
 
 # Site details
-site_coords = np.array([[-43.53113953, 172.63661180, 0]])
+site_coords = np.array([[-43.5381, 172.6474, 0]])
 site_nztm = coords.wgs_depth_to_nztm(site_coords)[0, [1, 0, 2]]
-site_vs30 = 500
-site_z1p0 = 0.6
+site_vs30 = 180.7414
+site_z1p0 = 0.337
 
 # Load the ERF files
 background_ffp = (
@@ -71,15 +71,16 @@ ds_erf_ffp = Path(__file__).parent / "NZ_DSModel_2015.txt"
 fault_erf_ffp = Path(__file__).parent / "NZ_FLTModel_2010.txt"
 
 ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
+ds_rupture_df = sha.nshm_2010.get_ds_rupture_df(background_ffp)
 
 flt_erf = nhm.load_nhm(fault_erf_ffp)
 flt_erf_df = nhm.load_nhm_df(str(fault_erf_ffp))
 
 ### DS Hazard
-ds_rupture_df = sha.nshm_2010.get_oq_ds_rupture_df(
-    background_ffp, site_nztm, site_vs30, site_z1p0
+oq_ds_rupture_df = sha.nshm_2010.get_oq_ds_rupture_df(
+    ds_rupture_df, site_nztm, site_vs30, site_z1p0
 )
-ds_gm_params_df = sha.nshm_2010.get_emp_gm_params(ds_rupture_df, GMM_MAPPING, PERIODS)
+ds_gm_params_df = sha.nshm_2010.get_emp_gm_params(oq_ds_rupture_df, GMM_MAPPING, PERIODS).sort_index()
 ds_hazard = sha.nshm_2010.compute_gmm_hazard(
     ds_gm_params_df, ds_erf_df.annual_rec_prob, ims
 )
@@ -100,16 +101,18 @@ flt_hazard = sha.nshm_2010.compute_gmm_hazard(
 )
 
 ### Plot
-plot_im = "pSA_1.0"
+plot_im = "pSA_5.0"
 fig = plt.figure(figsize=(16, 10))
 
-plt.plot(flt_hazard[plot_im].index.values, flt_hazard[plot_im].values, label="Fault")
-plt.plot(ds_hazard[plot_im].index.values, ds_hazard[plot_im].values, label="DS")
+plt.plot(flt_hazard[plot_im].index.values, flt_hazard[plot_im].values, label="Fault", c="b")
+plt.plot(ds_hazard[plot_im].index.values, ds_hazard[plot_im].values, label="DS", c="k")
 plt.plot(
     ds_hazard[plot_im].index.values,
     ds_hazard[plot_im].values + flt_hazard[plot_im].values,
     label="Total",
+    c="r",
 )
+
 plt.xlabel(f"{plot_im}")
 plt.ylabel("Annual Exceedance Probability")
 
@@ -118,4 +121,5 @@ plt.xscale("log")
 plt.yscale("log")
 
 fig.tight_layout()
+
 plt.show()

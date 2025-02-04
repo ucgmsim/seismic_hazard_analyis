@@ -157,7 +157,7 @@ def get_emp_gm_params(
 
 
 def get_oq_ds_rupture_df(
-    background_ffp: Path,
+    rupture_df: pd.DataFrame,
     site_nztm: np.ndarray[float],
     site_vs30: float,
     site_z1p0: float,
@@ -169,8 +169,8 @@ def get_oq_ds_rupture_df(
 
     Parameters
     ----------
-    background_ffp: Path
-        The file path to the background seismicity file
+    rupture_df: pd.DataFrame
+        The rupture dataframe for the distributed seismicity
     site_nztm: np.ndarray[float]
         The site coordinates in NZTM (X, Y, Depth)
     site_vs30: float
@@ -183,8 +183,6 @@ def get_oq_ds_rupture_df(
     rupture_df: pd.DataFrame
         The rupture dataframe for the distributed seismicity
     """
-    rupture_df = nshm2010_utils.get_ds_rupture_df(background_ffp)
-
     # Compute site distances
     rupture_df["rjb"] = (
         np.sqrt(
