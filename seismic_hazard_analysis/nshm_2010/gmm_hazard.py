@@ -202,9 +202,11 @@ def get_oq_ds_rupture_df(
         )
         / 1000
     )
-    # Todo: Not sure about this. This is just what we did in the past.
-    rupture_df["rx"] = 0
-    rupture_df["ry"] = 0
+    # Use Rjb for rx and ry, in the past we have used zero for this.
+    # Using Rjb gives the same result (when using Br13 and ZA06) 
+    # as using zero, and makes more sense.
+    rupture_df["rx"] = rupture_df["rjb"]
+    rupture_df["ry"] = rupture_df["rjb"]
 
     rupture_df["hypo_depth"] = rupture_df["depth"]
     rupture_df = rupture_df.rename(
