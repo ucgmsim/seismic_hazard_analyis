@@ -90,7 +90,7 @@ def create_ds_fault_name(lat: float, lon: float, depth: float):
     return f"{lat}_{lon}_{depth}"
 
 
-def get_ds_rupture_df(background_ffp: Path):
+def get_ds_source_df(background_ffp: Path):
     """
     Convert the background seismicity to a rupture dataframe.
     Magnitudes are sampled for each rupture.

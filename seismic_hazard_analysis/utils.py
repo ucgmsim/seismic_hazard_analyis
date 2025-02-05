@@ -202,7 +202,7 @@ def get_min_max_levels_for_im(im: str):
         raise ValueError("Invalid IM")
 
 
-def get_im_levels(im: str, n_values: int = 100):
+def get_im_levels(im: str, n_values: int = 200):
     """
     Create an range of values for a given
     IM according to their min, max

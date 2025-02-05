@@ -65,39 +65,23 @@ site_z1p0 = 0.337
 
 # Load the ERF files
 background_ffp = (
-    Path(__file__).parent / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt"
+    Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt"
 )
-ds_erf_ffp = Path(__file__).parent / "NZ_DSModel_2015.txt"
-fault_erf_ffp = Path(__file__).parent / "NZ_FLTModel_2010.txt"
+ds_erf_ffp = Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_DSModel_2015.txt"
+fault_erf_ffp = Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
 
 ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
-ds_rupture_df = sha.nshm_2010.get_ds_rupture_df(background_ffp)
+ds_source_df = sha.nshm_2010.get_ds_source_df(background_ffp)
 
-flt_erf = nhm.load_nhm(fault_erf_ffp)
+flt_definitions = nhm.load_nhm(fault_erf_ffp)
 flt_erf_df = nhm.load_nhm_df(str(fault_erf_ffp))
 
 ### DS Hazard
-oq_ds_rupture_df = sha.nshm_2010.get_oq_ds_rupture_df(
-    ds_rupture_df, site_nztm, site_vs30, site_z1p0
-)
-ds_gm_params_df = sha.nshm_2010.get_emp_gm_params(oq_ds_rupture_df, GMM_MAPPING, PERIODS).sort_index()
-ds_hazard = sha.nshm_2010.compute_gmm_hazard(
-    ds_gm_params_df, ds_erf_df.annual_rec_prob, ims
-)
+ds_hazard = sha.nshm_2010.compute_gmm_ds_hazard(ds_source_df, ds_erf_df, site_nztm, site_vs30, site_z1p0, GMM_MAPPING, ims)
 
 ### Fault Hazard
-# Create fault objects
-faults = {
-    cur_name: sha.nshm_2010.get_fault_objects(cur_fault)
-    for cur_name, cur_fault in flt_erf.items()
-}
-
-flt_rupture_df = sha.nshm_2010.get_flt_rupture_df(
-    faults, flt_erf_df, site_nztm, site_vs30, site_z1p0
-)
-flt_gm_params_df = sha.nshm_2010.get_emp_gm_params(flt_rupture_df, GMM_MAPPING, PERIODS)
-flt_hazard = sha.nshm_2010.compute_gmm_hazard(
-    flt_gm_params_df, 1 / flt_erf_df["recur_int_median"], ims
+flt_hazard = sha.nshm_2010.compute_gmm_flt_hazard(
+    site_nztm, site_vs30, site_z1p0, flt_erf_df, GMM_MAPPING, ims, flt_definitions=flt_definitions
 )
 
 ### Plot

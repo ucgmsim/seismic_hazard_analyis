@@ -1,4 +1,6 @@
 from .gmm_hazard import (
+    compute_gmm_ds_hazard,
+    compute_gmm_flt_hazard,
     compute_gmm_hazard,
     get_emp_gm_params,
     get_flt_rupture_df,
@@ -6,7 +8,7 @@ from .gmm_hazard import (
 )
 from .simulation_hazard import compute_sim_hazard, get_sim_site_ims, load_sim_im_data
 from .utils import (
-    get_ds_rupture_df,
+    get_ds_source_df,
     get_fault_objects,
 )
 
@@ -18,6 +20,8 @@ __all__ = [
     "get_flt_rupture_df",
     "get_sim_site_ims",
     "load_sim_im_data",
-    "get_ds_rupture_df",
+    "get_ds_source_df",
     "get_fault_objects",
+    "compute_gmm_ds_hazard",
+    "compute_gmm_flt_hazard",
 ]

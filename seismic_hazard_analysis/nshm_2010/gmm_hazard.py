@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -7,10 +6,11 @@ from tqdm import tqdm
 
 from empirical.util.classdef import GMM, TectType
 from empirical.util.openquake_wrapper_vectorized import oq_run
+from qcore import nhm
 from source_modelling import sources
 
 from .. import hazard, site_source, utils
-from . import utils as nshm2010_utils
+from . import utils as nshm_utils
 
 TECTONIC_TYPE_MAPPING = {
     "ACTIVE_SHALLOW": TectType.ACTIVE_SHALLOW,
@@ -57,7 +57,7 @@ def get_flt_rupture_df(
     scenario_ids = []
     scenario_section_ids = []
     segment_section_ids = []
-    for cur_name, cur_fault in tqdm(faults.items()):
+    for cur_name, cur_fault in tqdm(faults.items(), desc="Fault distances"):
         plane_nztm_coords.append(
             np.stack(
                 [cur_plane.bounds[:, [1, 0, 2]] for cur_plane in cur_fault.planes],
@@ -78,11 +78,6 @@ def get_flt_rupture_df(
 
     # Change the order of the corners
     plane_nztm_coords = plane_nztm_coords[[0, 3, 1, 2], :, :]
-
-    # Compute segment strike
-    segment_strike, segment_strike_vec = site_source.compute_segment_strike_nztm(
-        plane_nztm_coords
-    )
 
     # Compute rupture scenario distances
     rupture_df = site_source.get_scenario_distances(
@@ -111,7 +106,7 @@ def get_flt_rupture_df(
 
 
 def get_emp_gm_params(
-    rupture_df: pd.DataFrame, gmm_mapping: dict[TectType, GMM], pSA_periods: list[float]
+    rupture_df: pd.DataFrame, gmm_mapping: dict[TectType, GMM], ims: list[str]
 ):
     """
     Computes the GM parameters for the given
@@ -127,14 +122,24 @@ def get_emp_gm_params(
         OpenQuake GMM wrapper.
     gmm_mapping: dict
         Specifies the GMM to use for each tectonic type
-    pSA_periods: list[float]
-        The periods for which to compute the GM parameters
+    ims: list
+        The IMs to compute the GM parameters for
 
     Returns
     -------
     gm_params_df: pd.DataFrame
         The GM parameters for the given ruptures
     """
+    pSA_periods = [
+        float(im.rsplit("_", maxsplit=1)[1]) for im in ims if im.startswith("pSA")
+    ]
+
+    non_pSA_ims = [cur_im for cur_im in ims if not cur_im.startswith("pSA")]
+    if len(non_pSA_ims) > 0:
+        raise ValueError(
+            f"The IMs {non_pSA_ims} are not supported. Only pSA is currently supported!"
+        )
+
     gm_params_df = []
     for cur_tect_type_str in rupture_df["tectonic_type"].unique():
         cur_tect_type = TECTONIC_TYPE_MAPPING[cur_tect_type_str]
@@ -170,8 +175,8 @@ def get_oq_ds_rupture_df(
 
     Parameters
     ----------
-    rupture_df: pd.DataFrame
-        The rupture dataframe for the distributed seismicity
+    source: pd.DataFrame
+        The source dataframe for DS
     site_nztm: np.ndarray[float]
         The site coordinates in NZTM (X, Y, Depth)
     site_vs30: float
@@ -182,7 +187,7 @@ def get_oq_ds_rupture_df(
     Returns
     -------
     rupture_df: pd.DataFrame
-        The rupture dataframe for the distributed seismicity
+        The rupture dataframe for DS
     """
     # Compute site distances
     rupture_df["rjb"] = (
@@ -263,3 +268,113 @@ def compute_gmm_hazard(
         hazard_results[cur_im] = hazard.hazard_curve(gm_prob_df, rec_prob)
 
     return hazard_results
+
+
+def compute_gmm_ds_hazard(
+    source_df: pd.DataFrame,
+    ds_erf_df: pd.DataFrame,
+    site_nztm: np.ndarray[float],
+    site_vs30: float,
+    site_z1p0: float,
+    gmm_mapping: dict[TectType, GMM],
+    ims: Sequence[str],
+):
+    """
+    Compute the seismic hazard for a given site using
+    the provided rupture and empirical ground motion models (GMM).
+
+    Parameters
+    ----------
+    source_df : pd.DataFrame
+        DataFrame containing DS source information.
+    ds_erf_df : pd.DataFrame
+        DataFrame containing annual recurrence probabilities.
+    site_nztm : np.ndarray[float]
+        Array containing the site coordinates in NZTM projection.
+    site_vs30 : float
+        The average shear-wave velocity in the upper 30 meters of the site.
+    site_z1p0 : float
+        Depth to the 1.0 km/s shear-wave velocity horizon.
+    gmm_mapping : dict[TectType, GMM]
+        Dictionary mapping tectonic types to their
+        corresponding ground motion models (GMM).
+    ims : Sequence[str]
+        Sequence of intensity measures to be considered.
+
+    Returns
+    -------
+    ds_hazard : pd.DataFrame
+        DataFrame containing the computed seismic hazard for the given site.
+    """
+    oq_rupture_df = get_oq_ds_rupture_df(source_df, site_nztm, site_vs30, site_z1p0)
+    ds_gm_params_df = get_emp_gm_params(oq_rupture_df, gmm_mapping, ims).sort_index()
+    ds_hazard = compute_gmm_hazard(ds_gm_params_df, ds_erf_df.annual_rec_prob, ims)
+
+    return ds_hazard
+
+
+def compute_gmm_flt_hazard(
+    site_nztm: np.ndarray[float],
+    site_vs30: float,
+    site_z1p0: float,
+    flt_erf_df: pd.DataFrame,
+    gmm_mapping: dict[TectType, GMM],
+    ims: Sequence[str],
+    faults: dict[str, sources.Fault] = None,
+    flt_definitions: dict[str, nhm.NHMFault] = None,
+):
+    """
+    Compute the fault hazard for a given site.
+
+    Parameters:
+    -----------
+    site_nztm : np.ndarray[float]
+        The NZTM coordinates of the site.
+    site_vs30 : float
+        The Vs30 value of the site.
+    site_z1p0 : float
+        The Z1.0 value of the site.
+    flt_erf_df : pd.DataFrame
+        DataFrame containing fault ERF data.
+    gmm_mapping : dict[TectType, GMM]
+        Dictionary mapping tectonic types to GMM.
+    ims : Sequence[str]
+        List of intensity measures.
+    faults : dict[str, sources.Fault], optional
+        Dictionary of fault objects. 
+        If not provided, it will be created from flt_erf.
+    flt_erf : dict[str, nhm.NHMFault], optional
+        Dictionary containing fault ERF data. 
+        If not provided, faults must be provided.
+
+    Returns:
+    --------
+    flt_hazard : pd.DataFrame
+        DataFrame containing the computed fault hazard.
+    
+    Raises:
+    -------
+    ValueError
+        If neither faults nor flt_erf are provided.
+    """
+    if faults is None and flt_definitions is None:
+        raise ValueError("Faults or fault ERF must be provided!")
+
+    # Create the fault objects
+    if faults is None:
+        faults = {
+            cur_name: nshm_utils.get_fault_objects(cur_fault)
+            for cur_name, cur_fault in flt_definitions.items()
+        }
+
+    # Get GM parameters
+    flt_rupture_df = get_flt_rupture_df(
+        faults, flt_erf_df, site_nztm, site_vs30, site_z1p0
+    )
+
+    # Compute hazard
+    flt_gm_params_df = get_emp_gm_params(flt_rupture_df, gmm_mapping, ims)
+    flt_hazard = compute_gmm_hazard(
+        flt_gm_params_df, 1 / flt_erf_df["recur_int_median"], ims
+    )
+    return flt_hazard
