@@ -40,7 +40,7 @@ def load_sim_im_data(im_data_dir: Path):
 
     fault_im_dict = {}
     for cur_fault in tqdm(faults):
-        cur_im_files = (im_data_dir / cur_fault).rglob("*REL*.csv")
+        cur_im_files = (im_data_dir / cur_fault /"IM").rglob("*REL*.csv")
 
         # Create DataArray for each fault
         cur_im_data, cur_rel_names = [], []
@@ -51,9 +51,6 @@ def load_sim_im_data(im_data_dir: Path):
             if ix == 0:
                 cur_stations = cur_im_df.index
                 cur_IMs = cur_im_df.columns[1:]
-            else:
-                assert np.all(cur_stations == cur_im_df.index)
-                assert np.all(cur_IMs == cur_im_df.columns[1:])
 
             cur_rel_names.append(cur_im_file.stem.rsplit("_", 1)[1])
             cur_im_data.append(cur_im_df[cur_IMs].values)
@@ -66,6 +63,14 @@ def load_sim_im_data(im_data_dir: Path):
                 "IM": cur_IMs,
                 "realisation": cur_rel_names,
             },
+        )
+
+        # Remove stations and IMs with missing values
+        valid_stations = ~np.any(np.isnan(cur_im_array.values), axis=(1, 2))  # Stations without NaN
+        valid_IMs = ~np.any(np.isnan(cur_im_array.values), axis=(0, 2))       # IMs without NaN
+        cur_im_array = cur_im_array.sel(
+            station=cur_im_array.station[valid_stations],
+            IM=cur_im_array.IM[valid_IMs],
         )
         fault_im_dict[cur_fault] = cur_im_array
 
