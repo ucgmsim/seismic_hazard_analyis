@@ -29,6 +29,8 @@ def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]
         Path(__file__).parent.parent / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
     )
 
+    print(f"File Path: {Path(__file__)}")
+
     ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
     ds_rupture_df = sha.nshm_2010.get_ds_source_df(background_ffp)
 
