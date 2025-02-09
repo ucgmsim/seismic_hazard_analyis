@@ -15,17 +15,16 @@ config = yaml.safe_load(
     (Path(__file__).parent / "nshm2010_hazard_bench_config.yaml").read_text()
 )
 
+test_dir = Path("tests")
 
 @pytest.fixture(scope="module")
 def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]]:
     # Load the ERF files
-    background_ffp = ( Path("tests")
-        / "data/NSHM2010"
-        / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt"
-    )
-    ds_erf_ffp = Path("tests") / "data/NSHM2010" / "NZ_DSModel_2015.txt"
+    background_ffp = (test_dir / "data/NSHM2010"
+        / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt")
+    ds_erf_ffp = test_dir / "data/NSHM2010" / "NZ_DSModel_2015.txt"
     fault_erf_ffp = (
-        Path("tests") / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
+        test_dir / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
     )
 
     ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
