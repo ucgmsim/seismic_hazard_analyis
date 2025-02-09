@@ -19,17 +19,14 @@ config = yaml.safe_load(
 @pytest.fixture(scope="module")
 def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]]:
     # Load the ERF files
-    background_ffp = (
-        Path(__file__).parent.parent
+    background_ffp = ( Path("tests")
         / "data/NSHM2010"
         / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt"
     )
-    ds_erf_ffp = Path(__file__).parent.parent / "data/NSHM2010" / "NZ_DSModel_2015.txt"
+    ds_erf_ffp = Path("tests") / "data/NSHM2010" / "NZ_DSModel_2015.txt"
     fault_erf_ffp = (
-        Path(__file__).parent.parent / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
+        Path("tests") / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
     )
-
-    print(f"File Path: {Path(__file__)}")
 
     ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
     ds_rupture_df = sha.nshm_2010.get_ds_source_df(background_ffp)
