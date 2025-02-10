@@ -15,16 +15,16 @@ config = yaml.safe_load(
     (Path(__file__).parent / "nshm2010_hazard_bench_config.yaml").read_text()
 )
 
-test_dir = Path(__file__).parent.parent / "tests"
+root_dir = Path(__file__).parent.parent 
 
 @pytest.fixture(scope="module")
 def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]]:
     # Load the ERF files
-    background_ffp = (test_dir / "data/NSHM2010"
+    background_ffp = (root_dir / "data/NSHM2010"
         / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt")
-    ds_erf_ffp = test_dir / "data/NSHM2010" / "NZ_DSModel_2015.txt"
+    ds_erf_ffp = root_dir / "data/NSHM2010" / "NZ_DSModel_2015.txt"
     fault_erf_ffp = (
-        test_dir / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
+        root_dir / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
     )
 
     ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
@@ -85,7 +85,7 @@ def test_site_im_hazard(
     )
 
     # Load benchmark hazard data
-    benchmark_dir = Path(__file__).parent / "nshm2010_bench_data" / "hazard_data"
+    benchmark_dir = root_dir / "tests/nshm2010_bench_data" / "hazard_data"
     with open(benchmark_dir / f"{site_name}_hazard.pkl", "rb") as f:
         benchmark_hazard = pickle.load(f)
 
