@@ -15,7 +15,7 @@ config = yaml.safe_load(
     (Path(__file__).parent / "nshm2010_hazard_bench_config.yaml").read_text()
 )
 
-test_dir = Path("tests")
+test_dir = Path(__file__).parent.parent
 
 @pytest.fixture(scope="module")
 def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]]:
