@@ -80,7 +80,7 @@ def test_site_im_hazard(
     )
 
     # Load benchmark hazard data
-    benchmark_dir = root_dir / "tests/nshm2010_bench_data" / "hazard_data"
+    benchmark_dir = Path("tests/nshm2010_bench_data/hazard_data")
     with open(benchmark_dir / f"{site_name}_hazard.pkl", "rb") as f:
         benchmark_hazard = pickle.load(f)
 
