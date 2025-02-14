@@ -291,6 +291,7 @@ def compute_gmm_ds_hazard(
         DataFrame containing annual recurrence probabilities.
     site_nztm : np.ndarray[float]
         Array containing the site coordinates in NZTM projection.
+        [X, Y, Depth]
     site_vs30 : float
         The average shear-wave velocity in the upper 30 meters of the site.
     site_z1p0 : float

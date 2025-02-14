@@ -6,6 +6,7 @@ scipy
 tqdm
 xarray
 numba
+pyyaml
 source_modelling @ git+https://github.com/ucgmsim/source_modelling.git
 qcore @ git+https://github.com/ucgmsim/qcore.git
 empirical @ git+https://github.com/ucgmsim/Empirical_Engine.git
