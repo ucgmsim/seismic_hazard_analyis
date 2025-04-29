@@ -222,12 +222,7 @@ def compute_scenario_strike(
     # Numba doesn't support np.isin
     segment_strike_flip_mask = np.array(
         [
-            (
-                True
-                if id
-                in segment_section_ids[unique_section_id_ind[section_strike_flip_mask]]
-                else False
-            )
+            id in segment_section_ids[unique_section_id_ind[section_strike_flip_mask]]
             for id in segment_section_ids
         ]
     )
@@ -266,7 +261,7 @@ def compute_segment_strike_nztm(segment_nztm_coords: np.ndarray):
         The NZTM coordinates of the segment corners
         Assumes that the first and third point
         define the trace of the fault with the
-        second and fourth point are the 
+        second and fourth point are the
         corresponding down dip points
 
         shape: [4, 2, n_faults], (x, y)
@@ -339,7 +334,9 @@ def compute_segment_distances(
     n /= np.linalg.norm(n, axis=0)
     v3 = segment_nztm_coords[3, :, :] - segment_nztm_coords[0, :, :]
     v3 /= np.linalg.norm(v3, axis=0)
-    if np.any(np.einsum("ij,ij->j", n, v3) > 1e-2):
+
+    column_wise_dot_product = np.einsum("ij,ij->j", n, v3)
+    if np.any(column_wise_dot_product > 1e-2):
         raise ValueError("Not all points of each segment are coplanar")
 
     # Compute distances
@@ -541,8 +538,8 @@ def check_site_in_segment(
 
 
 @nb.njit(cache=True)
-def f(A: np.ndarray, B: np.ndarray, t: float):
-    """Helper function for computing the minimum distance to a line segment"""
+def interp(A: np.ndarray, B: np.ndarray, t: float):
+    """Numba alternative to np.interp"""
     return (1 - t) * A + t * B
 
 
@@ -741,13 +738,13 @@ def compute_single_scenario_distances(
         The section id for each segment
     segment_rjb: array of floats
         Rjb distance for each segment
-    segment_rrup
+    segment_rrup: array of floats
         Rrup distance for each segment
-    segment_rx
+    segment_rx: array of floats
         Rx distance for each segment
-    segment_ry
+    segment_ry: array of floats
         Ry distance for each segment
-    segment_ry_origin
+    segment_ry_origin: array of floats
         The origin used for the
         segment Ry calculations
 

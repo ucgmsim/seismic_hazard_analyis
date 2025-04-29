@@ -58,16 +58,16 @@ def load_sim_im_data(im_data_dir: Path):
             cur_rel_names.append(cur_im_file.stem.rsplit("_", 1)[1])
             cur_im_data.append(cur_im_df[cur_IMs].values)
 
-        cur_im_array = xr.DataArray(
-            data=np.stack(cur_im_data, axis=-1),
-            dims=("station", "IM", "realisation"),
+        cur_im_data = np.stack(cur_im_data, axis=-1)
+        cur_im_dataset = xr.Dataset(
+            {cur_im: (["station", "realisation"], cur_im_data[:, i, :]) for i, cur_im in enumerate(cur_IMs)},
             coords={
                 "station": cur_stations,
-                "IM": cur_IMs,
                 "realisation": cur_rel_names,
             },
         )
-        fault_im_dict[cur_fault] = cur_im_array
+
+        fault_im_dict[cur_fault] = cur_im_dataset
 
     return fault_im_dict
 
@@ -94,10 +94,10 @@ def get_sim_site_ims(fault_im_dict: dict[str, xr.DataArray], site: str):
         if site not in cur_array.station:
             continue
 
-        cur_df = cur_array.sel(station=site).to_dataframe(name="value").reset_index()
-        cur_df["fault"] = cur_fault
-        cur_df = cur_df.pivot(
-            index=["fault", "realisation"], columns="IM", values="value"
+        cur_df = cur_array.sel(station=site).to_dataframe().sort_index()
+        cur_df.index = pd.MultiIndex.from_product(
+            [[cur_fault], cur_df.index],
+            names=["fault", "realisation"],
         )
 
         cur_results.append(cur_df)

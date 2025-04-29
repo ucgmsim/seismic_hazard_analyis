@@ -13,6 +13,7 @@ import qcore.nhm as nhm
 import seismic_hazard_analysis as sha
 from empirical.util.classdef import GMM, TectType
 from qcore import coordinates as coords
+from source_modelling import sources
 
 # Periods to compute hazard for
 PERIODS = [
@@ -87,7 +88,7 @@ ds_hazard = sha.nshm_2010.compute_gmm_hazard(
 ### Fault Hazard
 # Create fault objects
 faults = {
-    cur_name: sha.nshm_2010.get_fault_objects(cur_fault)
+    cur_name: sources.Fault.from_nhm_fault(cur_fault)
     for cur_name, cur_fault in flt_erf.items()
 }
 

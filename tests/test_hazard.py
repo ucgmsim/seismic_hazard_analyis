@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import pandas as pd
 
@@ -77,8 +78,8 @@ def test_non_parametric_gm_prob():
     im_values = pd.Series(index=index, data=values)
     result = sha.hazard.non_parametric_gm_excd_prob(im_level, im_values)
 
-    assert np.isclose(result.loc["rupture_1", 2], 0.5)
-    assert np.isclose(result.loc["rupture_2", 2], 2 / 3)
+    assert result.loc["rupture_1", 2] == pytest.approx(0.5)
+    assert result.loc["rupture_2", 2] == pytest.approx(2 / 3)
 
 
 def test_parametric_gm_prob():
@@ -100,4 +101,4 @@ def test_parametric_gm_prob():
     # The IM values of the second rupture have a mean of 0.25 and standard deviation
     # of 0.1, which means that the exceedance probability for np.exp(1) should always
     # be pretty much zero
-    assert np.isclose(float(results.loc["rupture_2"]), 0)
+    assert results.loc["rupture_2"] == pytest.approx(0)
