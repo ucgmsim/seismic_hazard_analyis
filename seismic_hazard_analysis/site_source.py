@@ -600,7 +600,7 @@ def compute_min_line_segment_distance(
         t = -np.dot(u[i], v[i]) / np.dot(v[i], v[i])
 
         if 0 < t < 1:
-            C = f(A[i], B[i], t)
+            C = interp(A[i], B[i], t)
         else:
             C = A[i] if g(u[i], v[i], 0) < g(u[i], v[i], 1) else B[i]
 
