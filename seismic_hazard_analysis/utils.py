@@ -179,7 +179,7 @@ def get_min_max_levels_for_im(im: str):
             period = float(im.rsplit("_", 1)[-1])
             periods = np.array([0.5, 1.0, 3.0, 5.0, 10.0])
             bounds = [(0.005, 10.0), (0.005, 7.5), (0.0005, 5.0), (0.0005, 4.0), (0.0005, 3.0)]
-            idx = np.searchsorted(period, periods)
+            idx = np.searchsorted(periods, period)
             return bounds[idx]
         case "PGA":
             return 0.0001, 10.0

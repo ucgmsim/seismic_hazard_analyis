@@ -101,4 +101,4 @@ def test_parametric_gm_prob():
     # The IM values of the second rupture have a mean of 0.25 and standard deviation
     # of 0.1, which means that the exceedance probability for np.exp(1) should always
     # be pretty much zero
-    assert results.loc["rupture_2"] == pytest.approx(0)
+    assert float(results.loc["rupture_2"]) == pytest.approx(0)

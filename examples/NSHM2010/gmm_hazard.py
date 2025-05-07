@@ -88,7 +88,7 @@ ds_hazard = sha.nshm_2010.compute_gmm_hazard(
 ### Fault Hazard
 # Create fault objects
 faults = {
-    cur_name: sources.Fault.from_nhm_fault(cur_fault)
+    cur_name: sha.nshm_2010.get_fault_objects(cur_fault)
     for cur_name, cur_fault in flt_erf.items()
 }
 
