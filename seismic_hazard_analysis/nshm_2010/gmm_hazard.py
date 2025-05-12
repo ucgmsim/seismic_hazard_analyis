@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from empirical.util.classdef import GMM, TectType
-from empirical.util.openquake_wrapper_vectorized import oq_run
+import oq_wrapper as oqw
 from qcore import nhm
 from source_modelling import sources
 
@@ -13,10 +12,10 @@ from .. import hazard, site_source, utils
 from . import utils as nshm_utils
 
 TECTONIC_TYPE_MAPPING = {
-    "ACTIVE_SHALLOW": TectType.ACTIVE_SHALLOW,
-    "VOLCANIC": TectType.ACTIVE_SHALLOW,
-    "SUBDUCTION_INTERFACE": TectType.SUBDUCTION_INTERFACE,
-    "SUBDUCTION_SLAB": TectType.SUBDUCTION_SLAB,
+    "ACTIVE_SHALLOW": oqw.constants.TectType.ACTIVE_SHALLOW,
+    "VOLCANIC": oqw.constants.TectType.ACTIVE_SHALLOW,
+    "SUBDUCTION_INTERFACE": oqw.constants.TectType.SUBDUCTION_INTERFACE,
+    "SUBDUCTION_SLAB": oqw.constants.TectType.SUBDUCTION_SLAB,
 }
 
 
@@ -106,7 +105,9 @@ def get_flt_rupture_df(
 
 
 def get_emp_gm_params(
-    rupture_df: pd.DataFrame, gmm_mapping: dict[TectType, GMM], ims: list[str]
+    rupture_df: pd.DataFrame,
+    gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
+    ims: list[str],
 ):
     """
     Computes the GM parameters for the given
@@ -148,11 +149,11 @@ def get_emp_gm_params(
         cur_rupture_df = rupture_df.loc[
             rupture_df["tectonic_type"] == cur_tect_type_str
         ]
-        cur_result = oq_run(
+        cur_result = oqw.run_gmm(
             cur_gmm,
             cur_tect_type,
             cur_rupture_df,
-            "SA",
+            "pSA",
             periods=pSA_periods,
         )
         cur_result.index = cur_rupture_df.index
@@ -205,9 +206,11 @@ def get_oq_ds_rupture_df(
         )
         / 1000
     )
-    # Todo: Not sure about this. This is just what we did in the past.
-    rupture_df["rx"] = 0
-    rupture_df["ry"] = 0
+    # Use Rjb for rx and ry, in the past we have used zero for this.
+    # Using Rjb gives the same result (when using Br13 and ZA06)
+    # as using zero, and makes more sense.
+    rupture_df["rx"] = rupture_df["rjb"]
+    rupture_df["ry"] = rupture_df["rjb"]
 
     rupture_df["hypo_depth"] = rupture_df["depth"]
     rupture_df = rupture_df.rename(
@@ -276,7 +279,7 @@ def compute_gmm_ds_hazard(
     site_nztm: np.ndarray[float],
     site_vs30: float,
     site_z1p0: float,
-    gmm_mapping: dict[TectType, GMM],
+    gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: Sequence[str],
 ):
     """
@@ -319,7 +322,7 @@ def compute_gmm_flt_hazard(
     site_vs30: float,
     site_z1p0: float,
     flt_erf_df: pd.DataFrame,
-    gmm_mapping: dict[TectType, GMM],
+    gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: Sequence[str],
     faults: dict[str, sources.Fault] = None,
     flt_definitions: dict[str, nhm.NHMFault] = None,

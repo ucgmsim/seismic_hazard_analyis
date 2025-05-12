@@ -14,7 +14,7 @@ from qcore import nhm
 
 # Config
 im_dir = Path("/path/to/cybershake/im/data")
-fault_erf_ffp = Path(__file__).parent / "NZ_FLTModel_2010.txt"
+fault_erf_ffp = Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
 
 # Load ERF & IM data
 flt_erf_df = nhm.load_nhm_df(str(fault_erf_ffp))

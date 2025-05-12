@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import oq_wrapper as oqw
 import qcore.nhm as nhm
 import seismic_hazard_analysis as sha
-from empirical.util.classdef import GMM, TectType
 from qcore import coordinates as coords
 
 # Periods to compute hazard for
@@ -51,11 +51,12 @@ PERIODS = [
 ]
 # GMMs to use for each tectonic type
 GMM_MAPPING = {
-    TectType.ACTIVE_SHALLOW: GMM.Br_13,
-    TectType.SUBDUCTION_SLAB: GMM.ZA_06,
-    TectType.SUBDUCTION_INTERFACE: GMM.ZA_06,
+    oqw.constants.TectType.ACTIVE_SHALLOW: oqw.constants.GMM.Br_13,
+    oqw.constants.TectType.SUBDUCTION_SLAB: oqw.constants.GMM.ZA_06,
+    oqw.constants.TectType.SUBDUCTION_INTERFACE: oqw.constants.GMM.ZA_06,
 }
 ims = [f"pSA_{cur_period}" for cur_period in PERIODS]
+
 
 # Site details
 site_coords = np.array([[-43.5381, 172.6474, 0]])

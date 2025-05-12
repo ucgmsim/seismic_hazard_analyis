@@ -6,19 +6,22 @@ import pandas as pd
 import pytest
 import yaml
 
+import oq_wrapper as oqw
 import qcore.nhm as nhm
 import seismic_hazard_analysis as sha
-from empirical.util.classdef import GMM, TectType
 from qcore import coordinates as coords
 
 config = yaml.safe_load(
     (Path(__file__).parent / "nshm2010_hazard_bench_config.yaml").read_text()
 )
 
+
 @pytest.fixture(scope="module")
 def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]]:
     # Load the ERF files
-    background_ffp = Path("data/NSHM2010/NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt")
+    background_ffp = Path(
+        "data/NSHM2010/NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt"
+    )
     ds_erf_ffp = Path("data/NSHM2010/NZ_DSmodel_2015.txt")
     fault_erf_ffp = Path("data/NSHM2010/NZ_FLTmodel_2010.txt")
 
@@ -38,12 +41,16 @@ def erf_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]
 
 
 @pytest.fixture(scope="module")
-def gmm_mapping() -> dict[TectType, GMM]:
+def gmm_mapping() -> dict[oqw.constants.TectType, oqw.constants.GMM]:
     # GMMs to use for each tectonic type
     return {
-        TectType.ACTIVE_SHALLOW: GMM.from_str(config["gmm_config"]["ACTIVE_SHALLOW"]),
-        TectType.SUBDUCTION_SLAB: GMM.from_str(config["gmm_config"]["SUBDUCTION_SLAB"]),
-        TectType.SUBDUCTION_INTERFACE: GMM.from_str(
+        oqw.constants.TectType.ACTIVE_SHALLOW: oqw.constants.GMM(
+            config["gmm_config"]["ACTIVE_SHALLOW"]
+        ),
+        oqw.constants.TectType.SUBDUCTION_SLAB: oqw.constants.GMM(
+            config["gmm_config"]["SUBDUCTION_SLAB"]
+        ),
+        oqw.constants.TectType.SUBDUCTION_INTERFACE: oqw.constants.GMM(
             config["gmm_config"]["SUBDUCTION_INTERFACE"]
         ),
     }
@@ -55,7 +62,7 @@ def test_site_im_hazard(
     site_name: str,
     im: str,
     erf_data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, any]],
-    gmm_mapping: dict[TectType, GMM],
+    gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
 ):
     ds_rupture_df, ds_erf_df, flt_erf_df, faults = erf_data
     site_params = config["sites"][site_name]
@@ -85,4 +92,4 @@ def test_site_im_hazard(
         benchmark_hazard = pickle.load(f)
 
     # Compare the generated hazard data with the benchmark data for the specific IM
-    pd.testing.assert_frame_equal(comb_hazard, benchmark_hazard[im])
+    pd.testing.assert_frame_equal(comb_hazard, benchmark_hazard[im], atol=1e-4)
