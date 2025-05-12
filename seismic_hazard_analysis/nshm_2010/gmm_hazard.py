@@ -23,8 +23,7 @@ def get_flt_rupture_df(
     faults: dict[str, sources.Fault],
     flt_erf_df: pd.DataFrame,
     site_nztm: np.ndarray[float],
-    site_vs30: float,
-    site_z1p0: float,
+    site_properties: dict[str, float],
 ):
     """
     Creates the rupture dataframe for the given
@@ -39,10 +38,20 @@ def get_flt_rupture_df(
         The fault ERF dataframe
     site_nztm: np.ndarray[float]
         The site coordinates in NZTM (X, Y, Depth)
-    site_vs30: float
-        The Vs30 value at the site
-    site_z1p0: float
-        The Z1.0 value at the site in kilometres
+    site_properties: dict
+        Dictionary containing site properties:
+        - vs30: float, required
+            The average shear-wave velocity in the upper 30 meters of the site.
+        - vs30measured: bool, required
+            Whether the Vs30 value is measured or not.
+        - z1p0: float, required
+            Depth to the 1.0 km/s shear-wave velocity horizon in km.
+        - z2p5: float
+            Depth to the 2.5 km/s shear-wave velocity horizon in km.
+            Only required for some GMMs
+        - backarc: bool
+            Whether the site is in the backarc region.
+            Only required for some GMMs
 
     Returns
     -------
@@ -89,17 +98,21 @@ def get_flt_rupture_df(
 
     # Add fault details to the rupture_df
     rupture_df.index = list(faults.keys())
-    rupture_df[["mag", "rake", "ztor", "tectonic_type", "dip", "dbottom"]] = (
+    rupture_df[["mag", "rake", "ztor", "tectonic_type", "dip", "zbot"]] = (
         flt_erf_df.loc[
             rupture_df.index, ["mw", "rake", "dtop", "tectonic_type", "dip", "dbottom"]
         ]
     )
-    rupture_df["vs30"] = site_vs30
-    rupture_df["z1pt0"] = site_z1p0
-    rupture_df["vs30measured"] = True
-
     # Use hypocentre depth at 1/2
-    rupture_df["hypo_depth"] = (rupture_df["dbottom"] + rupture_df["ztor"]) / 2
+    rupture_df["hypo_depth"] = (rupture_df["zbot"] + rupture_df["ztor"]) / 2
+
+    rupture_df["vs30"] = site_properties["vs30"]
+    rupture_df["z1pt0"] = site_properties["z1p0"]
+    rupture_df["vs30measured"] = site_properties["vs30measured"]
+    if "z2p5" in site_properties.keys():
+        rupture_df["z2pt5"] = site_properties["z2p5"]
+    if "backarc" in site_properties.keys():
+        rupture_df["backarc"] = site_properties["backarc"]
 
     return rupture_df
 
@@ -149,13 +162,22 @@ def get_emp_gm_params(
         cur_rupture_df = rupture_df.loc[
             rupture_df["tectonic_type"] == cur_tect_type_str
         ]
-        cur_result = oqw.run_gmm(
-            cur_gmm,
-            cur_tect_type,
-            cur_rupture_df,
-            "pSA",
-            periods=pSA_periods,
-        )
+        if isinstance(cur_gmm, oqw.constants.GMM):
+            cur_result = oqw.run_gmm(
+                cur_gmm,
+                cur_tect_type,
+                cur_rupture_df,
+                "pSA",
+                periods=pSA_periods,
+            )
+        else:
+            cur_result = oqw.run_gmm_lt(
+                cur_gmm,
+                cur_tect_type,
+                cur_rupture_df,
+                "pSA",
+                periods=pSA_periods,
+            )
         cur_result.index = cur_rupture_df.index
         gm_params_df.append(cur_result)
 
@@ -166,8 +188,7 @@ def get_emp_gm_params(
 def get_oq_ds_rupture_df(
     rupture_df: pd.DataFrame,
     site_nztm: np.ndarray[float],
-    site_vs30: float,
-    site_z1p0: float,
+    site_properties: dict[str, float],
 ):
     """
     Creates the rupture dataframe for
@@ -180,10 +201,20 @@ def get_oq_ds_rupture_df(
         The source dataframe for DS
     site_nztm: np.ndarray[float]
         The site coordinates in NZTM (X, Y, Depth)
-    site_vs30: float
-        The Vs30 value at the site
-    site_z1p0: float
-        The Z1.0 value at the site in kilometres
+    site_properties: dict
+        Dictionary containing site properties:
+        - vs30: float, required
+            The average shear-wave velocity in the upper 30 meters of the site.
+        - vs30measured: bool, required
+            Whether the Vs30 value is measured or not.
+        - z1p0: float, required
+            Depth to the 1.0 km/s shear-wave velocity horizon in km.
+        - z2p5: float
+            Depth to the 2.5 km/s shear-wave velocity horizon in km.
+            Only required for some GMMs
+        - backarc: bool
+            Whether the site is in the backarc region.
+            Only required for some GMMs
 
     Returns
     -------
@@ -212,16 +243,22 @@ def get_oq_ds_rupture_df(
     rupture_df["rx"] = rupture_df["rjb"]
     rupture_df["ry"] = rupture_df["rjb"]
 
-    rupture_df["hypo_depth"] = rupture_df["depth"]
+    # rupture_df["hypo_depth"] = rupture_df["depth"]
     rupture_df = rupture_df.rename(
         columns={
             "dtop": "ztor",
+            "dbot": "zbot",
+            "depth": "hypo_depth",
         }
     )
 
-    rupture_df["vs30"] = site_vs30
-    rupture_df["z1pt0"] = site_z1p0
-    rupture_df["vs30measured"] = True
+    rupture_df["vs30"] = site_properties["vs30"]
+    rupture_df["z1pt0"] = site_properties["z1p0"]
+    rupture_df["vs30measured"] = site_properties["vs30measured"]
+    if "z2p5" in site_properties.keys():
+        rupture_df["z2pt5"] = site_properties["z2p5"]
+    if "backarc" in site_properties.keys():
+        rupture_df["backarc"] = site_properties["backarc"]
 
     return rupture_df
 
@@ -277,8 +314,7 @@ def compute_gmm_ds_hazard(
     source_df: pd.DataFrame,
     ds_erf_df: pd.DataFrame,
     site_nztm: np.ndarray[float],
-    site_vs30: float,
-    site_z1p0: float,
+    site_properties: dict[str, float],
     gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: Sequence[str],
 ):
@@ -295,10 +331,20 @@ def compute_gmm_ds_hazard(
     site_nztm : np.ndarray[float]
         Array containing the site coordinates in NZTM projection.
         [X, Y, Depth]
-    site_vs30 : float
-        The average shear-wave velocity in the upper 30 meters of the site.
-    site_z1p0 : float
-        Depth to the 1.0 km/s shear-wave velocity horizon.
+    site_properties: dict
+        Dictionary containing site properties:
+        - vs30: float, required
+            The average shear-wave velocity in the upper 30 meters of the site.
+        - vs30measured: bool, required
+            Whether the Vs30 value is measured or not.
+        - z1p0: float, required
+            Depth to the 1.0 km/s shear-wave velocity horizon in km.
+        - z2p5: float
+            Depth to the 2.5 km/s shear-wave velocity horizon in km.
+            Only required for some GMMs
+        - backarc: bool
+            Whether the site is in the backarc region.
+            Only required for some GMMs
     gmm_mapping : dict[TectType, GMM]
         Dictionary mapping tectonic types to their
         corresponding ground motion models (GMM).
@@ -310,7 +356,7 @@ def compute_gmm_ds_hazard(
     ds_hazard : pd.DataFrame
         DataFrame containing the computed seismic hazard for the given site.
     """
-    oq_rupture_df = get_oq_ds_rupture_df(source_df, site_nztm, site_vs30, site_z1p0)
+    oq_rupture_df = get_oq_ds_rupture_df(source_df, site_nztm, site_properties)
     ds_gm_params_df = get_emp_gm_params(oq_rupture_df, gmm_mapping, ims).sort_index()
     ds_hazard = compute_gmm_hazard(ds_gm_params_df, ds_erf_df.annual_rec_prob, ims)
 
@@ -319,8 +365,7 @@ def compute_gmm_ds_hazard(
 
 def compute_gmm_flt_hazard(
     site_nztm: np.ndarray[float],
-    site_vs30: float,
-    site_z1p0: float,
+    site_properties: dict[str, float],
     flt_erf_df: pd.DataFrame,
     gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: Sequence[str],
@@ -334,10 +379,20 @@ def compute_gmm_flt_hazard(
     -----------
     site_nztm : np.ndarray[float]
         The NZTM coordinates of the site.
-    site_vs30 : float
-        The Vs30 value of the site.
-    site_z1p0 : float
-        The Z1.0 value of the site.
+    site_properties: dict
+        Dictionary containing site properties:
+        - vs30: float, required
+            The average shear-wave velocity in the upper 30 meters of the site.
+        - vs30measured: bool, required
+            Whether the Vs30 value is measured or not.
+        - z1p0: float, required
+            Depth to the 1.0 km/s shear-wave velocity horizon in km.
+        - z2p5: float
+            Depth to the 2.5 km/s shear-wave velocity horizon in km.
+            Only required for some GMMs
+        - backarc: bool
+            Whether the site is in the backarc region.
+            Only required for some GMMs
     flt_erf_df : pd.DataFrame
         DataFrame containing fault ERF data.
     gmm_mapping : dict[TectType, GMM]
@@ -373,7 +428,7 @@ def compute_gmm_flt_hazard(
 
     # Get GM parameters
     flt_rupture_df = get_flt_rupture_df(
-        faults, flt_erf_df, site_nztm, site_vs30, site_z1p0
+        faults, flt_erf_df, site_nztm, site_properties
     )
 
     # Compute hazard
