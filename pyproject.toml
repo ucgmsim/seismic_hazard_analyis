@@ -61,7 +61,8 @@ known-first-party = [
     "empirical",
     "nshmdb",
     "IM_calculation",
-    "mera"
+    "mera",
+    "oq_wrapper",
 ]
 
 [tool.ruff.lint.per-file-ignores]

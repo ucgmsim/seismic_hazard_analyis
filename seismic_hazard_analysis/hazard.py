@@ -7,15 +7,15 @@ import pandas as pd
 import scipy as sp
 
 
-def non_parametric_gm_excd_prob(im_level: float, im_values: pd.Series):
+def non_parametric_gm_excd_prob(im_levels: np.ndarray[float], im_values: pd.Series) -> pd.DataFrame:
     """
     Computes GM  exceedance probability for each IM level over
     all ruptures based on the non-parametric GM predictions (e.g. simulations)
 
     Parameters
     ----------
-    im_level: float
-        The IM level for which to calculate the ground motion exceedance probability
+    im_levels: np.ndarray[float]
+        The IM levels for which to calculate the ground motion exceedance probability
     im_values: pd.Series
         The IM values for each rupture and for each "realisation"
          in each rupture
@@ -23,22 +23,28 @@ def non_parametric_gm_excd_prob(im_level: float, im_values: pd.Series):
 
     Returns
     -------
-    pd.Series
+    pd.DataFrame
         The exceedance probability for each rupture
     """
     # Count the number of realisations per rupture
     rupture_count = im_values.groupby(level=0).count().sort_index()
 
     # Count the number of realisation with IM values greater than the specified IM level
-    greater_count = (
-        (im_values > im_level).groupby(level=0).agg(np.count_nonzero).sort_index()
+    greater_comp = pd.DataFrame(
+        data=im_values.values[:, None] > im_levels[None, :],
+        index=im_values.index,
+        columns=im_levels,
     )
+    greater_count = greater_comp.groupby(level=0).agg(np.count_nonzero).sort_index()
 
-    return greater_count / rupture_count
+    return greater_count.div(rupture_count, axis=0)
 
 
 def parametric_gm_excd_prob(
-    im_levels: Union[float, np.ndarray], im_params: pd.DataFrame
+    im_levels: Union[float, np.ndarray],
+    im_params: pd.DataFrame,
+    mean_col: str = "mu",
+    std_col: str="sigma",
 ):
     """
     Computes the GM exceedance probability for each IM level over all
@@ -47,10 +53,15 @@ def parametric_gm_excd_prob(
     Parameters
     ----------
     im_levels: float or array
-        The IM level(s) for which to calculate the ground motion exceedance probability
+        The IM level(s) for which to calculate the ground motion
+        exceedance probability
     im_params: pd.DataFrame
-        The IM distribution parameters for for each rupture
-        format: index = rupture_name, columns = [mu, sigma]
+        The IM distribution parameters for each rupture
+        format: index = rupture_name
+    mean_col: str, optional
+        Name of the column containing the mean lnIM values
+    std_col: str, optional
+        Name of the column containing the standard deviation of lnIM values
 
     Returns
     -------
@@ -62,8 +73,8 @@ def parametric_gm_excd_prob(
 
     results = sp.stats.norm.sf(
         np.log(im_levels),
-        im_params.mu.values.reshape(-1, 1),
-        im_params.sigma.values.reshape(-1, 1),
+        im_params[mean_col].values.reshape(-1, 1),
+        im_params[std_col].values.reshape(-1, 1),
     )
     return pd.DataFrame(
         index=im_params.index.values, data=results, columns=im_levels.reshape(-1)
