@@ -3,3 +3,9 @@ numpy
 pandas
 pytest
 scipy
+tqdm
+xarray
+numba
+source_modelling @ git+https://github.com/ucgmsim/source_modelling.git
+qcore @ git+https://github.com/ucgmsim/qcore.git
+empirical @ git+https://github.com/ucgmsim/Empirical_Engine.git

@@ -168,3 +168,53 @@ def is_pd(B: np.ndarray[float]):
         return True
     except sp.linalg.LinAlgError:
         return False
+
+
+def get_min_max_levels_for_im(im: str):
+    """Get minimum and maximum for the given im. Values for velocity are
+    given on cm/s, acceleration on cm/s^2 and Ds on s
+    """
+    match im.upper():
+        case _ if im.startswith("pSA"):
+            period = float(im.rsplit("_", 1)[-1])
+            periods = np.array([0.5, 1.0, 3.0, 5.0, 10.0])
+            bounds = [(0.005, 10.0), (0.005, 7.5), (0.0005, 5.0), (0.0005, 4.0), (0.0005, 3.0)]
+            idx = np.searchsorted(periods, period)
+            return bounds[idx]
+        case "PGA":
+            return 0.0001, 10.0
+        case "PGV":
+            return 1.0, 400.0
+        case "CAV":
+            return 0.0001 * 980, 20.0 * 980.0
+        case "AI":
+            return 0.01, 1000.0
+        case "DS575" | "DS595":
+            return 1.0, 400.0
+        case "MMI":
+            return 1.0, 12.0 
+        case _:
+            raise ValueError("Invalid IM")
+
+
+def get_im_levels(im: str, n_values: int = 100):
+    """
+    Create an range of values for a given
+    IM according to their min, max
+    as defined by get_min_max_values
+
+    Parameters
+    ----------
+    im: IM
+        The IM Object to get im values for
+    n_values: int
+
+    Returns
+    -------
+    Array of IM values
+    """
+    start, end = get_min_max_levels_for_im(im)
+    im_values = np.logspace(
+        start=np.log(start), stop=np.log(end), num=n_values, base=np.e
+    )
+    return im_values
