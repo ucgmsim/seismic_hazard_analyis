@@ -2,10 +2,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from qcore import coordinates as coords
 from qcore import nhm
 from source_modelling import sources
+
+from .. import site_source
 
 
 def read_ds_nhm(background_ffp: Path) -> pd.DataFrame:
@@ -200,3 +203,53 @@ def get_fault_objects(fault_nhm: nhm.NHMFault) -> sources.Fault:
         planes.append(plane)
 
     return sources.Fault(planes)
+
+
+def run_site_to_source_dist(faults: dict[str, sources.Fault], site_nztm_coords: np.ndarray[float]):
+    """
+    Computes the source to site distances for the given faults and sites
+
+    Parameters
+    ----------
+    faults: dictionary of Fault objects
+        Fault object for each fault id
+    site_nztm_coords: array of floats
+        The site coordinates in NZTM (X, Y, Depth)
+    """
+    fault_id_mapping = {cur_name: i for i, cur_name in enumerate(faults.keys())}
+    plane_nztm_coords = []
+    scenario_ids = []
+    scenario_section_ids = []
+    segment_section_ids = []
+    for cur_name, cur_fault in tqdm(faults.items(), desc="Fault distances"):
+        plane_nztm_coords.append(
+            np.stack(
+                [cur_plane.bounds[:, [1, 0, 2]] for cur_plane in cur_fault.planes],
+                axis=2,
+            )
+        )
+        cur_id = fault_id_mapping[cur_name]
+        scenario_ids.append(cur_id)
+        # Each scenario only consists of a single fault/section
+        scenario_section_ids.append(np.asarray([cur_id]))
+        segment_section_ids.append(np.ones(len(cur_fault.planes), dtype=int) * cur_id)
+
+    plane_nztm_coords = np.concatenate(plane_nztm_coords, axis=2)
+    scenario_ids = np.asarray(scenario_ids)
+    segment_section_ids = np.concatenate(segment_section_ids)
+
+    assert plane_nztm_coords.shape[2] == segment_section_ids.size
+
+    # Change the order of the corners
+    plane_nztm_coords = plane_nztm_coords[[0, 3, 1, 2], :, :]
+
+    # Compute rupture scenario distances
+    dist_df = site_source.get_scenario_distances(
+        scenario_ids,
+        scenario_section_ids,
+        plane_nztm_coords,
+        segment_section_ids,
+        site_nztm_coords,
+    )
+
+    return dist_df

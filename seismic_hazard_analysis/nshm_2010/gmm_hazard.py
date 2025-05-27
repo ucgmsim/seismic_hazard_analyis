@@ -8,7 +8,7 @@ import oq_wrapper as oqw
 from qcore import nhm
 from source_modelling import sources
 
-from .. import hazard, site_source, utils
+from .. import hazard, utils
 from . import utils as nshm_utils
 
 TECTONIC_TYPE_MAPPING = {
@@ -58,43 +58,9 @@ def get_flt_rupture_df(
     rupture_df: pd.DataFrame
         The rupture dataframe for the given faults
     """
-    fault_id_mapping = {cur_name: i for i, cur_name in enumerate(faults.keys())}
-
-    # Fault Distance calculation
-    plane_nztm_coords = []
-    scenario_ids = []
-    scenario_section_ids = []
-    segment_section_ids = []
-    for cur_name, cur_fault in tqdm(faults.items(), desc="Fault distances"):
-        plane_nztm_coords.append(
-            np.stack(
-                [cur_plane.bounds[:, [1, 0, 2]] for cur_plane in cur_fault.planes],
-                axis=2,
-            )
-        )
-        cur_id = fault_id_mapping[cur_name]
-        scenario_ids.append(cur_id)
-        # Each scenario only consists of a single fault/section
-        scenario_section_ids.append(np.asarray([cur_id]))
-        segment_section_ids.append(np.ones(len(cur_fault.planes), dtype=int) * cur_id)
-
-    plane_nztm_coords = np.concatenate(plane_nztm_coords, axis=2)
-    scenario_ids = np.asarray(scenario_ids)
-    segment_section_ids = np.concatenate(segment_section_ids)
-
-    assert plane_nztm_coords.shape[2] == segment_section_ids.size
-
-    # Change the order of the corners
-    plane_nztm_coords = plane_nztm_coords[[0, 3, 1, 2], :, :]
-
-    # Compute rupture scenario distances
-    rupture_df = site_source.get_scenario_distances(
-        scenario_ids,
-        scenario_section_ids,
-        plane_nztm_coords,
-        segment_section_ids,
-        site_nztm,
-    )
+    # Compute source to site distances
+    rupture_df = nshm_utils.run_site_to_source_dist(
+        faults, site_nztm)
 
     # Add fault details to the rupture_df
     rupture_df.index = list(faults.keys())
@@ -102,7 +68,7 @@ def get_flt_rupture_df(
         flt_erf_df.loc[
             rupture_df.index, ["mw", "rake", "dtop", "tectonic_type", "dip", "dbottom"]
         ]
-    )
+    )   
     # Use hypocentre depth at 1/2
     rupture_df["hypo_depth"] = (rupture_df["zbot"] + rupture_df["ztor"]) / 2
 

@@ -656,22 +656,22 @@ def compute_segment_rjb_rrup(
             # Compute distance to the plane
             v1 = cur_segment_nztm_coords[1, :] - cur_segment_nztm_coords[0, :]
             v2 = cur_segment_nztm_coords[2, :] - cur_segment_nztm_coords[0, :]
-            n = np.cross(v1, v2)
+            n = np.cross(v2, v1)
             rrup_values[i] = (
                 np.dot(n, (site_nztm_coords - cur_segment_nztm_coords[0, :]))
                 / np.linalg.norm(n)
             ) / 1e3
             rjb_values[i] = 0
-
-        # Compute distances
-        A_ind = np.asarray([0, 0, 3, 3])
-        B_ind = np.asarray([1, 2, 1, 2])
-        rrup_values[i] = compute_min_line_segment_distance(
-            cur_segment_nztm_coords, site_nztm_coords, A_ind, B_ind
-        )
-        rjb_values[i] = compute_min_line_segment_distance(
-            cur_segment_nztm_coords[:, :2], site_nztm_coords[:2], A_ind, B_ind
-        )
+        else:
+            # Compute distances
+            A_ind = np.asarray([0, 0, 3, 3])
+            B_ind = np.asarray([1, 2, 1, 2])
+            rrup_values[i] = compute_min_line_segment_distance(
+                cur_segment_nztm_coords, site_nztm_coords, A_ind, B_ind
+            )
+            rjb_values[i] = compute_min_line_segment_distance(
+                cur_segment_nztm_coords[:, :2], site_nztm_coords[:2], A_ind, B_ind
+            )
 
     return rjb_values, rrup_values
 

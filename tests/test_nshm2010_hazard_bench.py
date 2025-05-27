@@ -68,17 +68,20 @@ def test_site_im_hazard(
     site_params = config["sites"][site_name]
     site_coords = np.array([[site_params["lat"], site_params["lon"], 0]])
     site_nztm = coords.wgs_depth_to_nztm(site_coords)[0, [1, 0, 2]]
-    site_vs30 = site_params["vs30"]
-    site_z1p0 = site_params["z1p0"]
+    site_properties = {
+        "vs30": site_params["vs30"],
+        "z1p0": site_params["z1p0"],
+        "vs30measured": True,
+    }
 
     ### DS Hazard
     ds_hazard = sha.nshm_2010.compute_gmm_ds_hazard(
-        ds_rupture_df, ds_erf_df, site_nztm, site_vs30, site_z1p0, gmm_mapping, [im]
+        ds_rupture_df, ds_erf_df, site_nztm, site_properties, gmm_mapping, [im]
     )
 
     ### Fault Hazard
     flt_hazard = sha.nshm_2010.compute_gmm_flt_hazard(
-        site_nztm, site_vs30, site_z1p0, flt_erf_df, gmm_mapping, [im], faults=faults
+        site_nztm, site_properties, flt_erf_df, gmm_mapping, [im], faults=faults
     )
 
     # Combine into single dataframe
