@@ -6,25 +6,40 @@ import pandas as pd
 import yaml
 from tqdm import tqdm
 
+import oq_wrapper as oqw
 import qcore.nhm as nhm
 import seismic_hazard_analysis as sha
-from empirical.util.classdef import GMM, TectType
 from qcore import coordinates as coords
 from source_modelling import sources
 
 
-def process_site(site_item: tuple[str, dict], ds_source_df: pd.DataFrame, ds_erf_df: pd.DataFrame, faults: list[sources.Fault], flt_erf_df: pd.DataFrame, gmm_mapping: dict, ims: list[str]):
+def process_site(
+    site_item: tuple[str, dict],
+    ds_source_df: pd.DataFrame,
+    ds_erf_df: pd.DataFrame,
+    faults: list[sources.Fault],
+    flt_erf_df: pd.DataFrame,
+    gmm_mapping: dict,
+    ims: list[str],
+):
     site_name, site_params = site_item
     site_coords = np.array([[site_params["lat"], site_params["lon"], 0]])
     site_nztm = coords.wgs_depth_to_nztm(site_coords)[0, [1, 0, 2]]
-    site_vs30 = site_params["vs30"]
-    site_z1p0 = site_params["z1p0"]
+    site_properties = {
+        "vs30": site_params["vs30"],
+        "z1p0": site_params["z1p0"],
+        "vs30measured": True,
+    }
 
     ### DS Hazard
-    ds_hazard = sha.nshm_2010.compute_gmm_ds_hazard(ds_source_df, ds_erf_df, site_nztm, site_vs30, site_z1p0, gmm_mapping, ims)
+    ds_hazard = sha.nshm_2010.compute_gmm_ds_hazard(
+        ds_source_df, ds_erf_df, site_nztm, site_properties, gmm_mapping, ims
+    )
 
     ### Fault Hazard
-    flt_hazard = sha.nshm_2010.compute_gmm_flt_hazard(site_nztm, site_vs30, site_z1p0, flt_erf_df, gmm_mapping, ims, faults=faults)
+    flt_hazard = sha.nshm_2010.compute_gmm_flt_hazard(
+        site_nztm, site_properties, flt_erf_df, gmm_mapping, ims, faults=faults
+    )
 
     # Combine into single dataframe
     comb_hazard = {
@@ -40,6 +55,7 @@ def process_site(site_item: tuple[str, dict], ds_source_df: pd.DataFrame, ds_erf
     with open(output_dir / f"{site_name}_hazard.pkl", "wb") as f:
         pickle.dump(comb_hazard, f)
 
+
 def main():
     # Load the hazard bench config
     config_fp = Path(__file__).parent.parent / "nshm2010_hazard_bench_config.yaml"
@@ -51,9 +67,13 @@ def main():
 
     # GMMs to use for each tectonic type
     gmm_mapping = {
-        TectType.ACTIVE_SHALLOW: GMM.from_str(config["gmm_config"]["ACTIVE_SHALLOW"]),
-        TectType.SUBDUCTION_SLAB: GMM.from_str(config["gmm_config"]["SUBDUCTION_SLAB"]),
-        TectType.SUBDUCTION_INTERFACE: GMM.from_str(
+        oqw.constants.TectType.ACTIVE_SHALLOW: oqw.get_model_from_str(
+            config["gmm_config"]["ACTIVE_SHALLOW"]
+        ),
+        oqw.constants.TectType.SUBDUCTION_SLAB: oqw.get_model_from_str(
+            config["gmm_config"]["SUBDUCTION_SLAB"]
+        ),
+        oqw.constants.TectType.SUBDUCTION_INTERFACE: oqw.get_model_from_str(
             config["gmm_config"]["SUBDUCTION_INTERFACE"]
         ),
     }
@@ -84,7 +104,10 @@ def main():
     }
 
     for cur_site in tqdm(config["sites"].items(), desc="Processing sites"):
-        process_site(cur_site, ds_rupture_df, ds_erf_df, faults, flt_erf_df, gmm_mapping, ims)
+        process_site(
+            cur_site, ds_rupture_df, ds_erf_df, faults, flt_erf_df, gmm_mapping, ims
+        )
+
 
 if __name__ == "__main__":
     main()

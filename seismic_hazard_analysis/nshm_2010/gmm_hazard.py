@@ -137,7 +137,7 @@ def get_emp_gm_params(
                 periods=pSA_periods,
             )
         else:
-            cur_result = oqw.run_gmm_lt(
+            cur_result = oqw.run_gmm_logic_tree(
                 cur_gmm,
                 cur_tect_type,
                 cur_rupture_df,
