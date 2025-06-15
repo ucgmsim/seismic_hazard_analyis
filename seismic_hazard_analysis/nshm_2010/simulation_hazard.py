@@ -3,6 +3,7 @@ Module for computing the seismic hazard for the
 New Zealand 2010 Seismic Hazard Model using
 the results from physics-based GM simulations
 """
+
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from tqdm import tqdm
 from .. import hazard, utils
 
 
-def load_sim_im_data(im_data_dir: Path):
+def load_sim_im_data(im_data_dir: Path, verbose: bool = True):
     """
     Loads the IM data for each fault
 
@@ -40,7 +41,7 @@ def load_sim_im_data(im_data_dir: Path):
 
     fault_im_dict = {}
     for cur_fault in tqdm(faults):
-        cur_im_files = (im_data_dir / cur_fault).rglob("*REL*.csv")
+        cur_im_files = (im_data_dir / cur_fault / "IM").rglob("*REL*.csv")
 
         # Create DataArray for each fault
         cur_im_data, cur_rel_names = [], []
@@ -49,25 +50,35 @@ def load_sim_im_data(im_data_dir: Path):
             cur_im_df = pd.read_csv(cur_im_file, index_col=0)
 
             if ix == 0:
-                cur_stations = cur_im_df.index
+                cur_stations = cur_im_df.index.values.astype(str)
                 cur_IMs = cur_im_df.columns[1:]
-            else:
-                assert np.all(cur_stations == cur_im_df.index)
-                assert np.all(cur_IMs == cur_im_df.columns[1:])
 
             cur_rel_names.append(cur_im_file.stem.rsplit("_", 1)[1])
             cur_im_data.append(cur_im_df[cur_IMs].values)
 
-        cur_im_array = xr.DataArray(
-            data=np.stack(cur_im_data, axis=-1),
-            dims=("station", "IM", "realisation"),
+        cur_im_data = np.stack(cur_im_data, axis=-1)
+
+        valid_stations_mask = ~np.any(
+            np.isnan(cur_im_data), axis=(1, 2)
+        )  # Stations without NaN
+        valid_IMs_mask = ~np.any(np.isnan(cur_im_data), axis=(0, 2))  # IMs without NaN
+        if verbose and (np.any(~valid_stations_mask) or np.any(~valid_IMs_mask)):
+            print(
+                f"{cur_fault} - Removed {np.sum(~valid_stations_mask)} stations and {np.sum(~valid_IMs_mask)} IMs with NaN values"
+            )
+
+        cur_im_dataset = xr.Dataset(
+            {
+                cur_im: (["station", "realisation"], cur_im_data[valid_stations_mask, i, valid_IMs_mask])
+                for i, cur_im in enumerate(cur_IMs)
+            },
             coords={
-                "station": cur_stations,
-                "IM": cur_IMs,
-                "realisation": cur_rel_names,
+                "station": cur_stations[valid_stations_mask],
+                "realisation": cur_rel_names[valid_IMs_mask],
             },
         )
-        fault_im_dict[cur_fault] = cur_im_array
+
+        fault_im_dict[cur_fault] = cur_im_dataset
 
     return fault_im_dict
 
@@ -94,10 +105,10 @@ def get_sim_site_ims(fault_im_dict: dict[str, xr.DataArray], site: str):
         if site not in cur_array.station:
             continue
 
-        cur_df = cur_array.sel(station=site).to_dataframe(name="value").reset_index()
-        cur_df["fault"] = cur_fault
-        cur_df = cur_df.pivot(
-            index=["fault", "realisation"], columns="IM", values="value"
+        cur_df = cur_array.sel(station=site).to_dataframe().sort_index()
+        cur_df.index = pd.MultiIndex.from_product(
+            [[cur_fault], cur_df.index],
+            names=["fault", "realisation"],
         )
 
         cur_results.append(cur_df)

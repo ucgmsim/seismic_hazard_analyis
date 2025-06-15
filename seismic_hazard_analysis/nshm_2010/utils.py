@@ -188,22 +188,13 @@ def get_fault_objects(fault_nhm: nhm.NHMFault) -> sources.Fault:
     sources.Fault
         Source object representing the fault
     """
-    trace_points_nztm = coords.wgs_depth_to_nztm(fault_nhm.trace[:, ::-1])
-
-    n_planes = fault_nhm.trace.shape[0] - 1
-    planes = []
-    for i in range(n_planes):
-        plane = sources.Plane.from_nztm_trace(
-            np.array([trace_points_nztm[i], trace_points_nztm[i + 1]]),
+    return sources.Fault.from_trace_points(
+            fault_nhm.trace[:, ::-1],
             fault_nhm.dtop,
             fault_nhm.dbottom,
             fault_nhm.dip,
             dip_dir=fault_nhm.dip_dir
         )
-        planes.append(plane)
-
-    return sources.Fault(planes)
-
 
 def run_site_to_source_dist(faults: dict[str, sources.Fault], site_nztm_coords: np.ndarray[float]):
     """
