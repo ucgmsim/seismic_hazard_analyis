@@ -13,7 +13,6 @@ import oq_wrapper as oqw
 import qcore.nhm as nhm
 import seismic_hazard_analysis as sha
 from qcore import coordinates as coords
-from source_modelling import sources
 
 # Periods to compute hazard for
 PERIODS = [
@@ -134,3 +133,4 @@ plt.yscale("log")
 fig.tight_layout()
 
 plt.show()
+
