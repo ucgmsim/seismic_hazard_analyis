@@ -58,10 +58,11 @@ known-first-party = [
     "workflow",
     "pygmt_helper",
     "qcore",
-    "empirical",
+    "oq_wrapper",
     "nshmdb",
     "IM_calculation",
-    "mera"
+    "mera",
+    "oq_wrapper",
 ]
 
 [tool.ruff.lint.per-file-ignores]
