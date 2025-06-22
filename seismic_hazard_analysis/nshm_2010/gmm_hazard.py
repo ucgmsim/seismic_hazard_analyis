@@ -59,8 +59,7 @@ def get_flt_rupture_df(
         The rupture dataframe for the given faults
     """
     # Compute source to site distances
-    rupture_df = nshm_utils.run_site_to_source_dist(
-        faults, site_nztm)
+    rupture_df = nshm_utils.run_site_to_source_dist(faults, site_nztm)
 
     # Add fault details to the rupture_df
     rupture_df.index = list(faults.keys())
@@ -68,7 +67,7 @@ def get_flt_rupture_df(
         flt_erf_df.loc[
             rupture_df.index, ["mw", "rake", "dtop", "tectonic_type", "dip", "dbottom"]
         ]
-    )   
+    )
     # Use hypocentre depth at 1/2
     rupture_df["hypo_depth"] = (rupture_df["zbot"] + rupture_df["ztor"]) / 2
 
@@ -87,6 +86,7 @@ def get_emp_gm_params(
     rupture_df: pd.DataFrame,
     gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: list[str],
+    gmm_epistemic_branch: oqw.constants.EpistemicBranch | None = None,
 ):
     """
     Computes the GM parameters for the given
@@ -104,12 +104,29 @@ def get_emp_gm_params(
         Specifies the GMM to use for each tectonic type
     ims: list
         The IMs to compute the GM parameters for
+    gmm_epistemic_branch: oqw.constants.EpistemicBranch, optional
+        The epistemic branch to use for the GMMs.
+        If None, the central branch is used.
+        Not supported for GMMLogicTree!
+
+    Raises
+    ------
+    ValueError
+        If gmm_epistemic_branch is specified and a GMMLogicTree is used
 
     Returns
     -------
     gm_params_df: pd.DataFrame
         The GM parameters for the given ruptures
     """
+    if gmm_epistemic_branch is not None and any(
+        isinstance(cur_gmm, oqw.constants.GMMLogicTree)
+        for cur_gmm in gmm_mapping.values()
+    ):
+        raise ValueError(
+            "gmm_epistemic_branch is not supported when using GMM logic trees!"
+        )
+
     pSA_periods = [
         float(im.rsplit("_", maxsplit=1)[1]) for im in ims if im.startswith("pSA")
     ]
@@ -135,6 +152,7 @@ def get_emp_gm_params(
                 cur_rupture_df,
                 "pSA",
                 periods=pSA_periods,
+                epistemic_branch=gmm_epistemic_branch if gmm_epistemic_branch else oqw.constants.EpistemicBranch.CENTRAL,
             )
         else:
             cur_result = oqw.run_gmm_logic_tree(
@@ -204,7 +222,7 @@ def get_oq_ds_rupture_df(
         / 1000
     )
     # Use Rjb for rx and ry, in the past we have used zero for this.
-    # Using Rjb gives the same result (when using Br13 and ZA06) 
+    # Using Rjb gives the same result (when using Br13 and ZA06)
     # as using zero, and makes more sense.
     rupture_df["rx"] = rupture_df["rjb"]
     rupture_df["ry"] = rupture_df["rjb"]
@@ -283,6 +301,7 @@ def compute_gmm_ds_hazard(
     site_properties: dict[str, float],
     gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: Sequence[str],
+    gmm_epistemic_branch: oqw.constants.EpistemicBranch | None = None,
 ):
     """
     Compute the seismic hazard for a given site using
@@ -316,6 +335,10 @@ def compute_gmm_ds_hazard(
         corresponding ground motion models (GMM).
     ims : Sequence[str]
         Sequence of intensity measures to be considered.
+    gmm_epistemic_branch : oqw.constants.EpistemicBranch, optional
+        The epistemic branch to use for the GMMs.
+        If None, the central branch is used.
+        Not supported for GMMLogicTree!
 
     Returns
     -------
@@ -335,8 +358,9 @@ def compute_gmm_flt_hazard(
     flt_erf_df: pd.DataFrame,
     gmm_mapping: dict[oqw.constants.TectType, oqw.constants.GMM],
     ims: Sequence[str],
-    faults: dict[str, sources.Fault] = None,
-    flt_definitions: dict[str, nhm.NHMFault] = None,
+    faults: dict[str, sources.Fault] | None = None,
+    flt_definitions: dict[str, nhm.NHMFault] | None = None,
+    gmm_epistemic_branch: oqw.constants.EpistemicBranch | None = None,
 ):
     """
     Compute the fault hazard for a given site.
@@ -366,17 +390,21 @@ def compute_gmm_flt_hazard(
     ims : Sequence[str]
         List of intensity measures.
     faults : dict[str, sources.Fault], optional
-        Dictionary of fault objects. 
+        Dictionary of fault objects.
         If not provided, it will be created from flt_erf.
     flt_erf : dict[str, nhm.NHMFault], optional
-        Dictionary containing fault ERF data. 
+        Dictionary containing fault ERF data.
         If not provided, faults must be provided.
+    gmm_epistemic_branch : oqw.constants.EpistemicBranch, optional
+        The epistemic branch to use for the GMMs.
+        If None, the central branch is used.
+        Not supported for GMMLogicTree!
 
     Returns:
     --------
     flt_hazard : pd.DataFrame
         DataFrame containing the computed fault hazard.
-    
+
     Raises:
     -------
     ValueError
@@ -393,12 +421,12 @@ def compute_gmm_flt_hazard(
         }
 
     # Get GM parameters
-    flt_rupture_df = get_flt_rupture_df(
-        faults, flt_erf_df, site_nztm, site_properties
-    )
+    flt_rupture_df = get_flt_rupture_df(faults, flt_erf_df, site_nztm, site_properties)
 
     # Compute hazard
-    flt_gm_params_df = get_emp_gm_params(flt_rupture_df, gmm_mapping, ims)
+    flt_gm_params_df = get_emp_gm_params(
+        flt_rupture_df, gmm_mapping, ims, gmm_epistemic_branch=gmm_epistemic_branch
+    )
     flt_hazard = compute_gmm_hazard(
         flt_gm_params_df, 1 / flt_erf_df["recur_int_median"], ims
     )
