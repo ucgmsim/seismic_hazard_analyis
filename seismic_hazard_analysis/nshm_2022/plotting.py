@@ -1,11 +1,17 @@
+import io
 from pathlib import Path
 
 import pandas as pd
 
 from nshmdb.nshmdb import NSHMDB
-from pygmt_helper import plotting
 from qcore import geo
 
+try:
+    from pygmt_helper import plotting
+    HAS_PYGMT = True
+except ImportError:
+    plotting = None
+    HAS_PYGMT = False
 
 def context_plot(
     site_lon: float,
@@ -34,6 +40,10 @@ def context_plot(
     out_ffp : Path
         Path to save the output figure.
     """
+    if not HAS_PYGMT:
+        raise ImportError("pygmt_helper is not installed. " \
+        "Please install it to use this function.")
+
     db = NSHMDB(nshm_source_db_ffp)
     event_df = pd.read_csv(
         nzgmdb_event_table_ffp, dtype={"evid": str}, index_col="evid"
@@ -63,6 +73,7 @@ def context_plot(
 
     # Load the mapd data
     map_data = plotting.NZMapData.load(high_res_topo=True)
+    # map_data = None
 
     # Create the figure
     fig = plotting.gen_region_fig(
@@ -137,8 +148,22 @@ def context_plot(
         font="8p,Helvetica,black",
     )
 
+    legend_spec = io.StringIO()
+    legend_spec.write("H 12p,Helvetica-Bold Historic Events\n")
+    legend_spec.write("D 0.1i 1p\n") 
+    legend_spec.write("S 0.1i c 0.15c blue 0.05p,black 0.4i Magnitude 4.0-5.0\n")
+    legend_spec.write("S 0.1i c 0.20c orange 0.05p,black 0.4i Magnitude 5.0-6.0\n")
+    legend_spec.write("S 0.1i c 0.25c red 0.05p,black 0.4i Magnitude 6.0+\n")
+
+    fig.legend(
+        spec=legend_spec,
+        box="+gwhite+p1p",
+    )
+
     fig.savefig(
         str(out_ffp),
         dpi=900,
         anti_alias=True,
     )
+
+
