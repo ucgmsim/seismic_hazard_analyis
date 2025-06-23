@@ -346,7 +346,7 @@ def compute_gmm_ds_hazard(
         DataFrame containing the computed seismic hazard for the given site.
     """
     oq_rupture_df = get_oq_ds_rupture_df(source_df, site_nztm, site_properties)
-    ds_gm_params_df = get_emp_gm_params(oq_rupture_df, gmm_mapping, ims).sort_index()
+    ds_gm_params_df = get_emp_gm_params(oq_rupture_df, gmm_mapping, ims, gmm_epistemic_branch=gmm_epistemic_branch).sort_index()
     ds_hazard = compute_gmm_hazard(ds_gm_params_df, ds_erf_df.annual_rec_prob, ims)
 
     return ds_hazard
