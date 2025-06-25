@@ -76,10 +76,10 @@ background_ffp = (
     / "NZBCK2015_Chch50yearsAftershock_OpenSHA_modType4.txt"
 )
 ds_erf_ffp = (
-    Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_DSModel_2015.txt"
+    Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_DSmodel_2015.txt"
 )
 fault_erf_ffp = (
-    Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_FLTModel_2010.txt"
+    Path(__file__).parent.parent.parent / "data/NSHM2010" / "NZ_FLTmodel_2010.txt"
 )
 
 ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
