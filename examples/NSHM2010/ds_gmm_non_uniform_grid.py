@@ -54,11 +54,12 @@ PERIODS = [
 ]
 # GMMs to use for each tectonic type
 GMM_MAPPING = {
-    oqw.constants.TectType.ACTIVE_SHALLOW: oqw.constants.GMM.Br_13,
-    oqw.constants.TectType.SUBDUCTION_SLAB: oqw.constants.GMM.ZA_06,
-    oqw.constants.TectType.SUBDUCTION_INTERFACE: oqw.constants.GMM.ZA_06,
+    oqw.constants.TectType.ACTIVE_SHALLOW: oqw.constants.GMMLogicTree.NSHM2022,
+    oqw.constants.TectType.SUBDUCTION_SLAB: oqw.constants.GMMLogicTree.NSHM2022,
+    oqw.constants.TectType.SUBDUCTION_INTERFACE: oqw.constants.GMMLogicTree.NSHM2022,
 }
 ims = [f"pSA_{cur_period}" for cur_period in PERIODS]
+vs30measured = True  
 
 batch_size = 1000
 n_procs = 32
@@ -104,8 +105,13 @@ def _process_site(
             ds_source_df,
             ds_erf_df,
             site_df.loc[site_id, ["nztm_x", "nztm_y", "depth"]].values,
-            site_df.loc[site_id, "vs30"],
-            site_df.loc[site_id, "z1p0"],
+            {
+                "vs30": site_df.loc[site_id, "vs30"],
+                "z1p0": site_df.loc[site_id, "z1p0"],
+                "z2p5": site_df.loc[site_id, "z2p5"],
+                "backarc": site_df.loc[site_id, "backarc"],
+                "vs30measured": site_df.loc[site_id, "vs30measured"],
+            },
             gmm_mapping,
             ims,
         )
@@ -134,14 +140,20 @@ def _process_batch(
         return
 
     start = time.time()
-    with mp.Pool(n_procs) as pool:
-        results = pool.starmap(
-            _process_site,
-            [
-                (cur_site, site_df, ds_source_df, ds_erf_df, gmm_mapping, ims)
-                for cur_site in sites
-            ],
-        )
+    if n_procs == 1:
+        results = [
+            _process_site(cur_site, site_df, ds_source_df, ds_erf_df, gmm_mapping, ims)
+            for cur_site in sites
+        ]
+    else:
+        with mp.Pool(n_procs) as pool:
+            results = pool.starmap(
+                _process_site,
+                [
+                    (cur_site, site_df, ds_source_df, ds_erf_df, gmm_mapping, ims)
+                    for cur_site in sites
+                ],
+            )
     print(f"Took: {time.time() - start} to run {sites.size} sites")
 
     # Combine the results
@@ -158,62 +170,70 @@ def _process_batch(
     np.save(out_dir / f"ds_hazard_sites_{batch_ix}.npy", sites)
 
 
-# Load the ERF files
-ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
-ds_source_df = sha.nshm_2010.get_ds_source_df(background_ffp)
+def main():
+    # Load the ERF files
+    ds_erf_df = pd.read_csv(ds_erf_ffp, index_col="rupture_name")
+    ds_source_df = sha.nshm_2010.get_ds_source_df(background_ffp)
 
-# Load the site data
-site_df = pd.read_csv(
-    sites_ffp,
-    sep=" ",
-    header=None,
-    names=["lon", "lat", "site_id"],
-    index_col="site_id",
-)
-vs30_df = pd.read_csv(
-    vs30_ffp, sep=" ", header=None, names=["site_id", "vs30"], index_col="site_id"
-)
-z_df = pd.read_csv(z_ffp, index_col="Station_Name")
-
-# Combine the site information
-site_df = pd.merge(site_df, vs30_df, left_index=True, right_index=True, how="inner")
-site_df = pd.merge(site_df, z_df, left_index=True, right_index=True, how="inner")
-site_df = site_df.rename(columns={"Z_1.0(km)": "z1p0"})
-
-# Convert to NZTM
-site_df[["nztm_x", "nztm_y"]] = coords.wgs_depth_to_nztm(
-    site_df[["lat", "lon"]].values
-)[:, [1, 0]]
-site_df["depth"] = 0
-
-sites = site_df.index.values.astype(str)
-
-print("Processing batches")
-n_batches = int(np.ceil(sites.size / batch_size))
-for cur_batch_ix in range(n_batches):
-    cur_batch_sites = sites[cur_batch_ix * batch_size : (cur_batch_ix + 1) * batch_size]
-    _process_batch(
-        cur_batch_sites,
-        site_df,
-        ds_source_df,
-        ds_erf_df,
-        GMM_MAPPING,
-        ims,
-        out_dir,
-        cur_batch_ix,
-        n_procs=32,
+    # Load the site data
+    site_df = pd.read_csv(
+        sites_ffp,
+        sep=" ",
+        header=None,
+        names=["lon", "lat", "site_id"],
+        index_col="site_id",
     )
-
-# Combine results
-print("Combining results")
-batch_result_ffps = list(out_dir.glob("ds_hazard_batch_*.pkl"))
-batch_results = [pd.read_pickle(cur_ffp) for cur_ffp in batch_result_ffps]
-
-im_results = {}
-for cur_im in ims:
-    im_results[cur_im] = pd.concat(
-        [cur_res[cur_im] for cur_res in batch_results], axis=1
+    vs30_df = pd.read_csv(
+        vs30_ffp, sep=" ", header=None, names=["site_id", "vs30"], index_col="site_id"
     )
+    z_df = pd.read_csv(z_ffp, index_col="Station_Name")
 
-# Save the results
-pd.to_pickle(im_results, out_dir / "ds_hazard.pkl")
+    # Combine the site information
+    site_df = pd.merge(site_df, vs30_df, left_index=True, right_index=True, how="inner")
+    site_df = pd.merge(site_df, z_df, left_index=True, right_index=True, how="inner")
+    site_df = site_df.rename(columns={"Z_1.0(km)": "z1p0", "Z_2.5(km)": "z2p5"})
+
+    # Add backarc flag
+    site_df["backarc"] = sha.nshm_2022.get_backarc_mask(site_df[["lon", "lat"]].values)
+    site_df["vs30measured"] = vs30measured
+
+    # Convert to NZTM
+    site_df[["nztm_x", "nztm_y"]] = coords.wgs_depth_to_nztm(
+        site_df[["lat", "lon"]].values
+    )[:, [1, 0]]
+    site_df["depth"] = 0
+
+    sites = site_df.index.values.astype(str)
+
+    print("Processing batches")
+    n_batches = int(np.ceil(sites.size / batch_size))
+    for cur_batch_ix in range(n_batches):
+        cur_batch_sites = sites[cur_batch_ix * batch_size : (cur_batch_ix + 1) * batch_size]
+        _process_batch(
+            cur_batch_sites,
+            site_df,
+            ds_source_df,
+            ds_erf_df,
+            GMM_MAPPING,
+            ims,
+            out_dir,
+            cur_batch_ix,
+            n_procs=n_procs,
+        )
+
+    # Combine results
+    print("Combining results")
+    batch_result_ffps = list(out_dir.glob("ds_hazard_batch_*.pkl"))
+    batch_results = [pd.read_pickle(cur_ffp) for cur_ffp in batch_result_ffps]
+
+    im_results = {}
+    for cur_im in ims:
+        im_results[cur_im] = pd.concat(
+            [cur_res[cur_im] for cur_res in batch_results], axis=1
+        )
+
+    # Save the results
+    pd.to_pickle(im_results, out_dir / "ds_hazard.pkl")
+
+if __name__ == "__main__":
+    main()
