@@ -6,6 +6,7 @@ Execution of each batch is parallelized using multiprocessing.
 
 import multiprocessing as mp
 import time
+import traceback
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -59,7 +60,7 @@ GMM_MAPPING = {
     oqw.constants.TectType.SUBDUCTION_INTERFACE: oqw.constants.GMMLogicTree.NSHM2022,
 }
 ims = [f"pSA_{cur_period}" for cur_period in PERIODS]
-vs30measured = True  
+vs30measured = True
 
 batch_size = 1000
 n_procs = 32
@@ -117,6 +118,7 @@ def _process_site(
         )
     except Exception as e:
         print(f"Error processing site {site_id}: {e}")
+        print(f"Full traceback:\n{traceback.format_exc()}")
         return None
     else:
         return cur_ds_hazard
@@ -188,6 +190,12 @@ def main():
     )
     z_df = pd.read_csv(z_ffp, index_col="Station_Name")
 
+    # Only run for real & uniform grid sites
+    site_df["grid_level"] = sha.utils.get_non_uniform_grid_site_level(
+        site_df.index.values.astype(str)
+    )
+    site_df = site_df.loc[site_df.grid_level < 1]
+
     # Combine the site information
     site_df = pd.merge(site_df, vs30_df, left_index=True, right_index=True, how="inner")
     site_df = pd.merge(site_df, z_df, left_index=True, right_index=True, how="inner")
@@ -208,7 +216,9 @@ def main():
     print("Processing batches")
     n_batches = int(np.ceil(sites.size / batch_size))
     for cur_batch_ix in range(n_batches):
-        cur_batch_sites = sites[cur_batch_ix * batch_size : (cur_batch_ix + 1) * batch_size]
+        cur_batch_sites = sites[
+            cur_batch_ix * batch_size : (cur_batch_ix + 1) * batch_size
+        ]
         _process_batch(
             cur_batch_sites,
             site_df,
@@ -234,6 +244,7 @@ def main():
 
     # Save the results
     pd.to_pickle(im_results, out_dir / "ds_hazard.pkl")
+
 
 if __name__ == "__main__":
     main()
