@@ -50,9 +50,12 @@ def query_non_parametric_multi_cdf_invs(
     Parameters
     ----------
     y: Sequence of floats
+        Quantiles to query
     cdf_x: 2d array of floats
+        The x values of the non-parametric cdf
+        With each row representing one CDF
     cdf_y: 2d array of floats
-        The x and y values of the non-parametric cdf
+        The y values of the non-parametric cdf
         With each row representing one CDF
 
     Returns
@@ -178,7 +181,13 @@ def get_min_max_levels_for_im(im: str):
         case _ if im.startswith("pSA"):
             period = float(im.rsplit("_", 1)[-1])
             periods = np.array([0.5, 1.0, 3.0, 5.0, 10.0])
-            bounds = [(0.005, 10.0), (0.005, 7.5), (0.0005, 5.0), (0.0005, 4.0), (0.0005, 3.0)]
+            bounds = [
+                (0.005, 10.0),
+                (0.005, 7.5),
+                (0.0005, 5.0),
+                (0.0005, 4.0),
+                (0.0005, 3.0),
+            ]
             idx = np.searchsorted(periods, period)
             return bounds[idx]
         case "PGA":
@@ -192,7 +201,7 @@ def get_min_max_levels_for_im(im: str):
         case "DS575" | "DS595":
             return 1.0, 400.0
         case "MMI":
-            return 1.0, 12.0 
+            return 1.0, 12.0
         case _:
             raise ValueError("Invalid IM")
 
@@ -218,3 +227,114 @@ def get_im_levels(im: str, n_values: int = 200):
         start=np.log(start), stop=np.log(end), num=n_values, base=np.e
     )
     return im_values
+
+
+
+def rp_to_prob(rp: float, t: float = 1.0):
+    """
+    Converts return period to exceedance probability
+    Based on Poisson distribution
+
+    Parameters
+    ----------
+    rp: float
+        Return period
+    t: float
+        Time period of interest
+
+    Returns
+    -------
+    Exceedance probability
+    """
+    return 1 - np.exp(-t / rp)
+
+
+def prob_to_rp(prob: float, t: float = 1.0):
+    """
+    Converts probability of exceedance to return period
+    Based on Poisson distribution
+
+    Parameters
+    ----------
+    prob: float
+        Exceedance probability
+    t: float
+        Time period of interest
+
+    Returns
+    -------
+    Return Period
+    """
+    return -t / np.log(1 - prob)
+
+
+def get_im_file_format(im: str) -> str:
+    """
+    Get the file format for the given IM.
+    """
+    if im.startswith("pSA"):
+        im = im.replace(".", "p")
+    return im
+    
+def reverse_im_file_format(im: str) -> str:
+    """
+    Reverse the file format for the given IM.
+    """
+    if im.startswith("pSA"):
+        split_im = im.split("_", 1)
+        return f"{split_im[0]}_{split_im[1].replace('p', '.')}"
+    
+    return im
+
+def get_non_uniform_grid_site_level(site_ids: np.ndarray) -> int:
+    """
+    For the non-uniform grid, get the grid level of a site based on its ID.
+    For more details see:
+    https://ucdigitalsms.atlassian.net/wiki/spaces/QuakeCore/pages/3291694883/Non-uniform+grid+18p6
+    https://ucdigitalsms.atlassian.net/wiki/spaces/QuakeCore/pages/3291700313/Non+Uniform+Grid+20.3
+
+    Assumes any non-numeric site ID is a real site and returns -1 for those.
+
+    Parameters
+    ----------
+    site_id : np.ndarray
+        The site IDs.
+
+    Returns
+    -------
+    np.ndarray
+        The grid level of the sites.
+    """
+    site_grid_level = np.full(site_ids.shape, -1, dtype=int)
+
+    real_sites_mask = ~np.char.isnumeric(site_ids)
+    site_grid_level[real_sites_mask] = -1
+
+    level_0_mask = np.char.startswith(site_ids, "0")
+    site_grid_level[level_0_mask] = 0
+
+    level_1_mask = np.char.startswith(site_ids, "1")
+    site_grid_level[level_1_mask] = 1
+
+    level_2_mask = np.char.startswith(site_ids, "2")
+    site_grid_level[level_2_mask] = 2
+
+    level_3_mask = np.char.startswith(site_ids, "3")
+    site_grid_level[level_3_mask] = 3
+
+    level_4_mask = np.char.startswith(site_ids, "4")
+    site_grid_level[level_4_mask] = 4
+
+    assert (
+        np.count_nonzero(
+            real_sites_mask
+            | level_0_mask
+            | level_1_mask
+            | level_2_mask
+            | level_3_mask
+            | level_4_mask
+        )
+        == site_ids.size
+    )
+
+    return site_grid_level
