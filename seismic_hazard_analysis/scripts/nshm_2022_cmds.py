@@ -78,5 +78,41 @@ def compute_uhs(
     uhs_df.to_csv(output_ffp)
 
 
+@app.command("get-rps-im-values")
+def get_rps_im_values(
+    im: str = typer.Argument(..., help="IM name, e.g., 'pSA_0.1'"),
+    hcurve_stats_dir: Path = typer.Argument(
+        ..., help="Directory containing the hazard curve statistics"
+    ),
+    rps: list[float] = typer.Option(
+        ..., help="Return periods for which to get the IM values. "
+    ),
+):
+    """
+    Get the IM values for the given return periods from the mean hazard curve.
+    """
+    # Load the hazard curve statistics
+    hcurve_stats_ffp = (
+        hcurve_stats_dir / f"{sha.utils.get_im_file_format(im)}_statistics.csv"
+    )
+    if not hcurve_stats_ffp.exists():
+        raise FileNotFoundError(
+            f"Hazard curve statistics file not found: {hcurve_stats_ffp}"
+        )
+
+    mean_hcurve = pd.read_csv(hcurve_stats_ffp, index_col=0)["mean"].squeeze()
+    excd_rates = [sha.utils.rp_to_prob(cur_rp) for cur_rp in rps]
+
+    im_values = sha.utils.exceedance_to_im(
+        excd_rates, 
+        mean_hcurve.index.values,
+        mean_hcurve.values,
+    )
+
+    for cur_rp, cur_im_value in zip(rps, im_values):
+        print(f"{im} - {cur_rp} years: {cur_im_value:.6f}")
+
+
+
 if __name__ == "__main__":
     app()
