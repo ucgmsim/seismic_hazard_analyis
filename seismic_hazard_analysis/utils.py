@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import scipy as sp
+from scipy.interpolate.interpolate import interp1d
 
 
 def query_non_parametric_cdf_invs(
@@ -268,6 +269,36 @@ def prob_to_rp(prob: float, t: float = 1.0):
     return -t / np.log(1 - prob)
 
 
+def exceedance_to_im(
+    exceedances: np.ndarray, im_values: np.ndarray, hazard_values: np.ndarray
+):
+    """
+    Converts the given exceedance rate to an IM value, based on the
+    provided im and hazard values
+    Parameters
+    ----------
+    exceedances: array of float
+        The exceedance values of interest
+    im_values: numpy array
+        The IM values corresponding to the hazard values
+        Has to be the same shape as hazard_values
+    hazard_values: numpy array
+        The hazard values corresponding to the IM values
+        Has to be the same shape as im_values
+    Returns
+    -------
+    float
+        The IM value corresponding to the provided exceedance
+    """
+    return np.exp(
+        interp1d(
+            np.log(hazard_values) * -1,
+            np.log(im_values),
+            kind="linear",
+            bounds_error=True,
+        )(np.log(exceedances) * -1)
+    )
+
 def get_im_file_format(im: str) -> str:
     """
     Get the file format for the given IM.
@@ -285,6 +316,14 @@ def reverse_im_file_format(im: str) -> str:
         return f"{split_im[0]}_{split_im[1].replace('p', '.')}"
     
     return im
+
+def get_pSA_period(im: str) -> float:
+    """
+    Get the period for the given pSA IM.
+    """
+    if im.startswith("pSA"):
+        return float(im.rsplit("_", 1)[-1])
+    raise ValueError(f"IM {im} is not a pSA IM")
 
 def get_non_uniform_grid_site_level(site_ids: np.ndarray) -> int:
     """

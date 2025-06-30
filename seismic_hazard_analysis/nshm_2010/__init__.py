@@ -1,4 +1,5 @@
 from .gmm_hazard import (
+    TECTONIC_TYPE_MAPPING,
     compute_gmm_ds_hazard,
     compute_gmm_flt_hazard,
     compute_gmm_hazard,
@@ -24,4 +25,5 @@ __all__ = [
     "get_fault_objects",
     "compute_gmm_ds_hazard",
     "compute_gmm_flt_hazard",
+    "TECTONIC_TYPE_MAPPING",
 ]

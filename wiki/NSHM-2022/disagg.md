@@ -1,4 +1,3 @@
-
 # NSHM 2022 Disaggregation
 
 ## OQ Disagg Execution
@@ -6,6 +5,7 @@
 The disaggregation is run directly via OQ, and takes a significant amount of time (~6 hours on `hypocentre`) and memory. 
 Memory usage is generally the main limiting factor, and can easily exceed 100Gb, depending on the disagg bin specification. 
 Would not recommend trying to run on a standard desktop, `hypocentre` is generally a good choice.
+
 ### Setup
 - Create a run directoy
 - Add the NSHM GMM logic tree file,  `NZ_NSHM_GMM_LT_final_EE.xml`
@@ -62,7 +62,8 @@ iml_disagg = {"SA(0.075)": 0.6486028178906605}
 num_rlzs_disagg = 0
 ```
 
-The `general`, `logic_tree`, `erf`, `site_params`, `calculation`, `output` sections don't generally modification.
+The `general`, `logic_tree`, `erf`, `site_params`, `calculation`, `output` sections should generally not be modified.
+The only exception is `number_of_logic_tree_samples`, which can be used to specify the number of logic tree branches to use via MC sampling. This can result in significant speed-up, however will not give the exact result. 
 
 The `disagg` section allows setting of the disagg bins. 
 The `disagg_outputs` field specifies along which dimensions to perform disaggregation, in this example it is set to `TRT_Mag_Dist_Eps`, which corresponds to Tectonic Type, Magnitude, Distance, Epsilon. For supported `disagg_outputs` values see [here](https://docs.openquake.org/oq-engine/master/manual/user-guide/outputs/disaggregation-outputs.html#hazard-disaggregation).
